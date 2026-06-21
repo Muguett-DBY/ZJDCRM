@@ -1,4 +1,4 @@
-import { env } from "cloudflare:workers";
+import { applyD1Migrations, env } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import coreMigration from "../../migrations/0001_core.sql?raw";
 import businessMigration from "../../migrations/0002_business.sql?raw";
@@ -10,6 +10,10 @@ type MigrationFile = {
   sql: string;
 };
 
+type ColumnInfo = {
+  name: string;
+};
+
 const migrations: MigrationFile[] = [
   { name: "0001_core.sql", sql: coreMigration },
   { name: "0002_business.sql", sql: businessMigration },
@@ -18,10 +22,86 @@ const migrations: MigrationFile[] = [
 ];
 
 function splitSqlStatements(sql: string) {
-  return sql
-    .split(";")
-    .map((statement) => statement.trim())
-    .filter((statement) => statement.length > 0);
+  const statements: string[] = [];
+  let statement = "";
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let inLineComment = false;
+  let inBlockComment = false;
+
+  for (let index = 0; index < sql.length; index += 1) {
+    const char = sql[index];
+    const next = sql[index + 1];
+
+    if (inLineComment) {
+      if (char === "\n") {
+        inLineComment = false;
+        statement += char;
+      }
+      continue;
+    }
+
+    if (inBlockComment) {
+      if (char === "*" && next === "/") {
+        inBlockComment = false;
+        index += 1;
+      }
+      continue;
+    }
+
+    if (!inSingleQuote && !inDoubleQuote) {
+      if (char === "-" && next === "-") {
+        inLineComment = true;
+        index += 1;
+        continue;
+      }
+      if (char === "/" && next === "*") {
+        inBlockComment = true;
+        index += 1;
+        continue;
+      }
+    }
+
+    if (char === "'" && !inDoubleQuote) {
+      statement += char;
+      if (inSingleQuote && next === "'") {
+        statement += next;
+        index += 1;
+      } else {
+        inSingleQuote = !inSingleQuote;
+      }
+      continue;
+    }
+
+    if (char === '"' && !inSingleQuote) {
+      statement += char;
+      if (inDoubleQuote && next === '"') {
+        statement += next;
+        index += 1;
+      } else {
+        inDoubleQuote = !inDoubleQuote;
+      }
+      continue;
+    }
+
+    if (char === ";" && !inSingleQuote && !inDoubleQuote) {
+      const trimmed = statement.trim();
+      if (trimmed.length > 0) {
+        statements.push(trimmed);
+      }
+      statement = "";
+      continue;
+    }
+
+    statement += char;
+  }
+
+  const trimmed = statement.trim();
+  if (trimmed.length > 0) {
+    statements.push(trimmed);
+  }
+
+  return statements;
 }
 
 const requiredTables = [
@@ -65,10 +145,11 @@ const requiredTables = [
 const requiredIndexes = [
   "companies_normalized_name_active_uq",
   "clues_owner_id_stage_code_idx",
-  "contacts_mobile_idx",
-  "followups_next_followup_at_idx",
-  "notifications_recipient_id_idx",
-  "audit_logs_created_at_idx",
+  "clues_stage_code_active_idx",
+  "clues_source_code_acquired_at_idx",
+  "clues_updated_at_idx",
+  "clues_owner_id_next_followup_at_idx",
+  "followups_clue_id_followup_at_idx",
 ] as const;
 
 describe("database migrations", () => {
@@ -76,18 +157,33 @@ describe("database migrations", () => {
     await env.DB.exec("PRAGMA foreign_keys = ON");
     for (const migration of migrations) {
       expect(migration.name).toMatch(/^\d{4}_.+\.sql$/);
-      for (const statement of splitSqlStatements(migration.sql)) {
-        await env.DB.exec(`${statement.replace(/\s+/g, " ")};`);
-      }
+      expect(splitSqlStatements(migration.sql)).not.toHaveLength(0);
     }
+
+    await applyD1Migrations(
+      env.DB,
+      migrations.map((migration) => ({
+        name: migration.name,
+        queries: splitSqlStatements(migration.sql),
+      })),
+    );
 
     const tables = await env.DB
       .prepare(
-        "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name <> '_cf_METADATA' ORDER BY name",
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name <> '_cf_METADATA' AND name <> 'd1_migrations' ORDER BY name",
       )
       .all<{ name: string }>();
 
-    expect(tables.results.map((row) => row.name)).toEqual([...requiredTables].sort());
+    expect(
+      tables.results.map((row: { name: string }) => row.name),
+    ).toEqual([...requiredTables].sort());
+
+    const appliedMigrations = await env.DB
+      .prepare("SELECT name FROM d1_migrations ORDER BY name")
+      .all<{ name: string }>();
+    expect(appliedMigrations.results.map((row: { name: string }) => row.name)).toEqual(
+      migrations.map((migration) => migration.name),
+    );
 
     const indexes = await env.DB
       .prepare(
@@ -95,15 +191,25 @@ describe("database migrations", () => {
       )
       .all<{ name: string; sql: string | null }>();
 
-    expect(indexes.results.map((row) => row.name)).toEqual(
+    expect(indexes.results.map((row: { name: string }) => row.name)).toEqual(
       expect.arrayContaining([...requiredIndexes]),
     );
 
     const normalizedCompanyIndex = indexes.results.find(
-      (row) => row.name === "companies_normalized_name_active_uq",
+      (row: { name: string; sql: string | null }) =>
+        row.name === "companies_normalized_name_active_uq",
     );
     expect(normalizedCompanyIndex?.sql).toContain("WHERE deleted_at IS NULL");
     expect(normalizedCompanyIndex?.sql).toContain("normalized_name");
+
+    const followupColumns = await env.DB
+      .prepare("PRAGMA table_info('followups')")
+      .all<ColumnInfo>();
+    expect(
+      followupColumns.results.map((column: { name: string }) => column.name),
+    ).toEqual(
+      expect.arrayContaining(["deleted_at", "deleted_by"]),
+    );
 
     await env.DB.prepare(
       "INSERT INTO companies (id, name, normalized_name, main_business, industry_code, status, created_at, created_by, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",

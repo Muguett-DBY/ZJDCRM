@@ -179,6 +179,8 @@ CREATE TABLE followups (
   next_followup_at TEXT,
   new_stage_code TEXT,
   stage_reason TEXT,
+  deleted_at TEXT,
+  deleted_by TEXT,
   created_at TEXT NOT NULL,
   created_by TEXT NOT NULL,
   updated_at TEXT NOT NULL,

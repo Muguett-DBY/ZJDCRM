@@ -110,6 +110,22 @@ CREATE INDEX clues_owner_id_stage_code_idx
   ON clues(owner_id, stage_code)
   WHERE deleted_at IS NULL;
 
+CREATE INDEX clues_stage_code_active_idx
+  ON clues(stage_code)
+  WHERE deleted_at IS NULL;
+
+CREATE INDEX clues_source_code_acquired_at_idx
+  ON clues(source_code, acquired_at)
+  WHERE deleted_at IS NULL;
+
+CREATE INDEX clues_updated_at_idx
+  ON clues(updated_at)
+  WHERE deleted_at IS NULL;
+
+CREATE INDEX clues_owner_id_next_followup_at_idx
+  ON clues(owner_id, next_followup_at)
+  WHERE deleted_at IS NULL AND owner_id IS NOT NULL AND next_followup_at IS NOT NULL;
+
 CREATE INDEX clues_department_id_idx
   ON clues(department_id);
 
@@ -122,12 +138,9 @@ CREATE INDEX clue_contacts_contact_id_idx
 CREATE UNIQUE INDEX clue_contacts_clue_id_contact_id_uq
   ON clue_contacts(clue_id, contact_id);
 
-CREATE INDEX followups_clue_id_idx
-  ON followups(clue_id);
-
-CREATE INDEX followups_next_followup_at_idx
-  ON followups(next_followup_at)
-  WHERE next_followup_at IS NOT NULL;
+CREATE INDEX followups_clue_id_followup_at_idx
+  ON followups(clue_id, followup_at)
+  WHERE deleted_at IS NULL;
 
 CREATE INDEX stage_histories_clue_id_idx
   ON stage_histories(clue_id);
