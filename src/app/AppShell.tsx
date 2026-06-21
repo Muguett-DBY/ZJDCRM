@@ -38,7 +38,7 @@ export default function AppShell() {
         </div>
         <nav className="sidebar-nav" role="navigation" aria-label="主导航">
           {navItems
-            .filter((item) => !item.adminOnly || user?.isSuperAdmin)
+            .filter((item) => !item.adminOnly || user?.canManageSystem)
             .map((item) => (
             <NavLink
               key={item.path}

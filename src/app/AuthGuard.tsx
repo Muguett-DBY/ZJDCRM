@@ -19,7 +19,7 @@ export default function AuthGuard({ children, requireAdmin }: AuthGuardProps) {
       .then((session) => {
         if (session) {
           setSession(session.user, session.csrfToken);
-          setIsAdmin(session.user.isSuperAdmin);
+          setIsAdmin(session.user.canManageSystem);
           setState("authenticated");
         } else {
           setState("unauthenticated");
@@ -49,7 +49,7 @@ export default function AuthGuard({ children, requireAdmin }: AuthGuardProps) {
 }
 
 export function useAuthGuard() {
-  const [session, setSession] = useState<{ user: { id: string; displayName: string; isSuperAdmin: boolean; departmentId: string | null } } | null>(null);
+  const [session, setSession] = useState<{ user: { id: string; displayName: string; isSuperAdmin: boolean; canManageSystem: boolean; departmentId: string | null } } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

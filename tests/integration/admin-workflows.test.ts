@@ -151,6 +151,50 @@ describe("admin safety and account management", () => {
     expect(response.body.error?.code).toBe("LAST_SUPER_ADMIN");
   });
 
+  it("does not grant system management through a normal role", async () => {
+    const now = "2026-06-22T00:00:00.000Z";
+    const password = await hashPassword("legacy-password-123");
+    await env.DB.prepare(
+      `INSERT INTO users
+        (id, account, normalized_account, display_name, password_hash, password_salt,
+         password_iterations, status, is_super_admin, failed_login_count,
+         created_at, created_by, updated_at, updated_by)
+       VALUES ('legacy-user', 'legacy-user', 'legacy-user', 'Legacy User', ?, ?, ?, 'active', 0, 0, ?, 'seed', ?, 'seed')`,
+    ).bind(password.hash, password.salt, password.iterations, now, now).run();
+    await env.DB.prepare(
+      `INSERT INTO roles
+        (id, code, name, is_system, status, created_at, created_by, updated_at, updated_by)
+       VALUES ('legacy-role', 'legacy_role', 'Legacy Role', 0, 'active', ?, 'seed', ?, 'seed')`,
+    ).bind(now, now).run();
+    await env.DB.prepare(
+      `INSERT INTO permissions
+        (id, code, name, permission_type, status, created_at, created_by, updated_at, updated_by)
+       VALUES ('legacy-admin-permission', 'system:admin:access', 'Legacy admin access', 'menu', 'active', ?, 'seed', ?, 'seed')`,
+    ).bind(now, now).run();
+    await env.DB.prepare(
+      `INSERT INTO user_roles
+        (id, user_id, role_id, granted_by, granted_at, created_at, created_by, updated_at, updated_by)
+       VALUES ('legacy-user-role', 'legacy-user', 'legacy-role', 'admin-workflows', ?, ?, 'seed', ?, 'seed')`,
+    ).bind(now, now, now).run();
+    await env.DB.prepare(
+      `INSERT INTO role_permissions
+        (id, role_id, permission_id, granted_by, granted_at, created_at, created_by, updated_at, updated_by)
+       VALUES ('legacy-role-permission', 'legacy-role', 'legacy-admin-permission', 'admin-workflows', ?, ?, 'seed', ?, 'seed')`,
+    ).bind(now, now, now).run();
+
+    const login = await createApi().request("http://localhost/api/auth/login", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ account: "legacy-user", password: "legacy-password-123" }),
+    }, env);
+    const legacyCookie = login.headers.get("set-cookie") || "";
+    const response = await createApi().request("http://localhost/api/admin/users", {
+      headers: { cookie: legacyCookie },
+    }, env);
+
+    expect(response.status).toBe(403);
+  });
+
   it("configures role permissions and data scope", async () => {
     const now = "2026-06-21T00:00:00.000Z";
     await env.DB.prepare(

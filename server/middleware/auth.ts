@@ -60,6 +60,7 @@ export const requireAuth: MiddlewareHandler = async (c, next) => {
       account: session.account,
       displayName: session.display_name,
       isSuperAdmin: session.is_super_admin === 1,
+      canManageSystem: session.is_super_admin === 1,
       departmentId: session.department_id,
     });
     c.set("sessionId", session.session_id);

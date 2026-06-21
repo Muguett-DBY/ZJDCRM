@@ -16,6 +16,7 @@ vi.mock("../../src/features/auth/auth.api", () => ({
       account: "admin",
       displayName: "Admin",
       isSuperAdmin: true,
+      canManageSystem: true,
       departmentId: null,
     },
     csrfToken: "csrf-token",

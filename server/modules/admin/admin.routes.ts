@@ -5,23 +5,21 @@ import { queryAll, queryOne, execute, batch } from "../../shared/db";
 import { createId } from "../../shared/ids";
 import { nowIsoUtc } from "../../shared/time";
 import { hashPassword } from "../../shared/crypto";
-import { buildAccessContext, hasPermission } from "../access/access.service";
+import { buildAccessContext } from "../access/access.service";
 import { writeAuditLog } from "../../shared/audit";
 import { requireAuth } from "../../middleware/auth";
 import { requireCsrf } from "../../middleware/csrf";
 import { normalizeCompanyName } from "../../shared/normalize-company";
-
-const ADMIN_PERM = "system:admin:access";
 
 function adminGuard() {
   return async (c: any, next: any) => {
     const user = c.get("user");
     if (!user) return c.json({ ok: false, error: { code: "NOT_AUTHENTICATED", message: "未登录" } }, 401);
 
-    const access = await buildAccessContext(c.env.DB, user.id);
-    if (!hasPermission(access, ADMIN_PERM) && !user.isSuperAdmin) {
+    if (!user.canManageSystem) {
       return c.json({ ok: false, error: { code: "FORBIDDEN", message: "没有管理后台访问权限" } }, 403);
     }
+    const access = await buildAccessContext(c.env.DB, user.id);
     c.set("access", access);
     await next();
   };
@@ -218,7 +216,7 @@ export function registerAdminRoutes(app: Hono): void {
   app.get("/api/admin/permissions", requireAuth, adminGuard(), async (c) => {
     const permissions = await queryAll(
       c.env.DB,
-      "SELECT id, code, name, permission_type FROM permissions WHERE deleted_at IS NULL AND status = 'active' ORDER BY sort_order, name",
+      "SELECT id, code, name, permission_type FROM permissions WHERE deleted_at IS NULL AND status = 'active' AND code <> 'system:admin:access' ORDER BY sort_order, name",
     );
     return c.json({ ok: true, data: permissions });
   });

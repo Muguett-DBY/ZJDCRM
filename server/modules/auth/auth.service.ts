@@ -12,6 +12,7 @@ export interface LoginResult {
     account: string;
     displayName: string;
     isSuperAdmin: boolean;
+    canManageSystem: boolean;
     departmentId: string | null;
   };
   csrfToken?: string;
@@ -26,6 +27,7 @@ export interface SessionUser {
   account: string;
   displayName: string;
   isSuperAdmin: boolean;
+  canManageSystem: boolean;
   departmentId: string | null;
 }
 
@@ -94,6 +96,7 @@ export async function login(
       account: user.account,
       displayName: user.display_name,
       isSuperAdmin: user.is_super_admin === 1,
+      canManageSystem: user.is_super_admin === 1,
       departmentId: user.department_id,
     },
     csrfToken,
@@ -125,6 +128,7 @@ export async function getSession(
       account: user.account,
       displayName: user.display_name,
       isSuperAdmin: user.is_super_admin === 1,
+      canManageSystem: user.is_super_admin === 1,
       departmentId: user.department_id,
     },
     csrfToken,

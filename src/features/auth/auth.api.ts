@@ -5,6 +5,7 @@ interface SessionUser {
   account: string;
   displayName: string;
   isSuperAdmin: boolean;
+  canManageSystem: boolean;
   departmentId: string | null;
 }
 
