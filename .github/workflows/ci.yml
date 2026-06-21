@@ -18,6 +18,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: npm approve-scripts esbuild workerd sharp 2>/dev/null || true
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run test:run
