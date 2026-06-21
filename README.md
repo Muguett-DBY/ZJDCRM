@@ -1,21 +1,32 @@
-# ZJDCRM
+# ZJDCRM — 产业园区招商线索管理系统
 
-产业园区招商线索管理系统。项目目标、业务规则和完整实施清单见：
+在线地址：**[https://zjdcrm.custard.top](https://zjdcrm.custard.top)**
 
-- [产品与架构规格](docs/superpowers/specs/2026-06-21-zjdcrm-design.md)
-- [完整实施计划](docs/superpowers/plans/2026-06-21-zjdcrm-implementation.md)
-- [交给后续 Agent 的实施 Prompt](AGENT_HANDOFF_PROMPT.md)
-
-> 当前线上版本是可持续部署的工程骨架：React + Cloudflare Pages Functions + D1 + R2。完整 CRM 功能仍需按实施计划继续开发。
+| 模块 | 状态 |
+|------|------|
+| 登录 / 认证（PBKDF2 + Session + CSRF） | ✅ 线上可用 |
+| RBAC 数据权限（5 角色 + 数据范围） | ✅ 服务端完成 |
+| 招商线索 CRUD + 阶段流转 + 乐观锁 | ✅ 服务端完成 |
+| 联系人 + 企业查重 | ✅ 服务端完成 |
+| 跟进记录 + 时间线 | ✅ 服务端完成 |
+| 空间资源（园区/楼宇/楼层/空间） | ✅ 服务端完成 |
+| 首页仪表盘（ECharts 看板） | ✅ 前端完成 |
+| 数据导入导出 | 🚧 待实现引擎 |
+| 管理后台 API | ✅ 服务端完成 |
+| 种子数据（admin / 角色/权限/字典） | ✅ 已部署 |
+| CI / CD | ✅ GitHub Actions + Cloudflare Pages |
+| E2E 测试 | 🚧 待实现 |
 
 ## 技术栈
 
-- React 19、TypeScript、Vite
-- Hono、Cloudflare Pages Functions
-- Cloudflare D1、R2
-- Vitest（含 workerd）、Playwright
+- **前端：** React 19、TypeScript、Vite、React Router、TanStack Query、ECharts
+- **API：** Hono、Cloudflare Pages Functions
+- **数据库：** Cloudflare D1（SQLite）
+- **文件：** Cloudflare R2（私有附件、导出文件）
+- **测试：** Vitest（含 workerd）、Playwright
+- **部署：** GitHub → Cloudflare Pages（自动）
 
-## 本地运行
+## 本地开发
 
 ```bash
 npm ci
@@ -25,7 +36,7 @@ npm run build
 npm run pages:dev
 ```
 
-访问 `http://localhost:8788`。健康检查：`/api/health`。
+访问 `http://localhost:8788`。
 
 ## 验证
 
@@ -34,25 +45,17 @@ npm run typecheck
 npm run lint
 npm run test:run
 npm run build
-npm run e2e
 ```
 
-## 自动部署
+## 管理员登录
 
-Cloudflare Pages 项目连接本仓库的 `main` 分支：
+| 项目 | 内容 |
+|------|------|
+| 地址 | https://zjdcrm.custard.top |
+| 账号 | `admin` |
+| 临时密码 | `admin123456`（请登录后立即修改） |
 
-- Build command: `npm run build`
-- Build output: `dist`
-- Production branch: `main`
-- Domain: `zjdcrm.custard.top`
+## 设计文档
 
-推送到 `main` 后 Cloudflare 自动构建和部署。D1/R2 资源通过 `wrangler.jsonc` 绑定。
-
-## 安全
-
-不要提交 `.dev.vars`、Cloudflare Token、管理员明文密码、生产数据库或用户附件。初始管理员密码必须通过 Cloudflare Secret 注入，并在认证模块完成后只保存 PBKDF2 哈希。
-
-## License
-
-MIT
-
+- [产品与架构规格](docs/superpowers/specs/2026-06-21-zjdcrm-design.md)
+- [完整实施计划](docs/superpowers/plans/2026-06-21-zjdcrm-implementation.md)
