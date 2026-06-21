@@ -12,7 +12,7 @@ describe("hashPassword", () => {
     const result = await hashPassword("MyP@ssw0rd!");
     expect(result.hash).toBeTruthy();
     expect(result.salt).toBeTruthy();
-    expect(result.iterations).toBeGreaterThanOrEqual(100_000);
+    expect(result.iterations).toBe(100_000);
   });
 
   it("different passwords produce different hashes", async () => {

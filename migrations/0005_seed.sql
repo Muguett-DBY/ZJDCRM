@@ -8,7 +8,7 @@ VALUES ('system', 'system', 'system', '系统', '', '', 1, 'active', 0, 0, '2026
 
 -- ===== 2. Admin User =====
 INSERT OR IGNORE INTO users (id, account, normalized_account, display_name, password_hash, password_salt, password_iterations, status, is_super_admin, failed_login_count, created_at, created_by, updated_at, updated_by)
-VALUES ('admin-001', 'admin', 'admin', '系统管理员', '5iFc2aYLmoLttAFJVl9YmsLkK59Bf2NF/4P09c6ntkQ=', 'QpJee0OYkF5KE84z/bsgYw==', 310000, 'active', 1, 0, '2026-06-21T00:00:00Z', 'system', '2026-06-21T00:00:00Z', 'system');
+VALUES ('admin-001', 'admin', 'admin', '系统管理员', 'zT7v8VddkVJMS+iCxLqofqspTlWaiIh8XCxDpcaBJUw=', 'FJSJNgpb0eMYBFZqOOVQvA==', 100000, 'active', 1, 0, '2026-06-21T00:00:00Z', 'system', '2026-06-21T00:00:00Z', 'system');
 
 -- ===== 2. Default Department =====
 INSERT OR IGNORE INTO departments (id, parent_id, code, name, sort_order, status, created_at, created_by, updated_at, updated_by)

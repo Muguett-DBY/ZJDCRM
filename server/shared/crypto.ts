@@ -28,7 +28,7 @@ export function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
 export async function hashPassword(
   password: string,
   salt = crypto.getRandomValues(new Uint8Array(16)),
-  iterations = 310_000,
+  iterations = 100_000,
 ): Promise<{ hash: string; salt: string; iterations: number }> {
   const key = await crypto.subtle.importKey(
     "raw",
