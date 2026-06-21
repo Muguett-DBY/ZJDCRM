@@ -7,7 +7,14 @@ import tseslint from "typescript-eslint";
 
 export default defineConfig([
   {
-    ignores: ["dist", "coverage", "worker-configuration.d.ts"],
+    ignores: [
+      ".wrangler",
+      "coverage",
+      "dist",
+      "playwright-report",
+      "test-results",
+      "worker-configuration.d.ts",
+    ],
   },
   {
     files: ["**/*.{ts,tsx}"],

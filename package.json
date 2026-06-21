@@ -12,9 +12,13 @@
     "lint": "eslint .",
     "typecheck": "tsc -b --pretty false",
     "e2e": "playwright test",
+    "e2e:server": "npm run build && npm run pages:dev -- --ip 127.0.0.1 --port 4173 --show-interactive-dev-session=false",
     "cf:types": "wrangler types",
-    "pages:dev": "wrangler pages dev dist",
+    "pages:dev": "wrangler pages dev dist --local",
     "deploy": "npm run build && wrangler pages deploy dist"
+  },
+  "projectNotes": {
+    "task12": "Use read-excel-file and write-excel-file; do not restore xlsx."
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
@@ -29,10 +33,10 @@
     "react-dom": "^19.2.7",
     "react-hook-form": "^7.80.0",
     "react-router-dom": "^7.18.0",
-    "xlsx": "^0.18.5",
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.16.18",
     "@cloudflare/workers-types": "^4.20260620.1",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.61.0",
@@ -43,7 +47,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
-    "@vitest/coverage-v8": "^4.1.9",
+    "@vitest/coverage-istanbul": "^4.1.9",
     "eslint": "^10.5.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",

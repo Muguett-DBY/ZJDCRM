@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "composite": true,
+    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.worker.tsbuildinfo"
+  },
+  "include": [
+    "server/**/*.ts",
+    "functions/**/*.ts",
+    "tests/integration/**/*.ts",
+    "tests/integration/**/*.tsx",
+    "worker-configuration.d.ts"
+  ]
+}
