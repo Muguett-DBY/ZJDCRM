@@ -12,7 +12,7 @@
     {
       "binding": "DB",
       "database_name": "zjdcrm-db",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "339fd3f2-dc52-4072-9c9a-8dc486d391dd",
       "migrations_dir": "migrations",
       "migrations_table": "d1_migrations",
     },
