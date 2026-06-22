@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../lib/api";
+import { useCopy } from "../../lib/copy-provider";
 
 interface SpaceItem {
   id: string; name: string; code: string; area: number; available_area: number;
@@ -9,6 +10,7 @@ interface SpaceItem {
 }
 
 export default function SpacesListPage() {
+  const { t } = useCopy();
   const [data, setData] = useState<{ items: SpaceItem[]; total: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("");
@@ -28,7 +30,7 @@ export default function SpacesListPage() {
 
   return (
     <div className="page">
-      <h1>空间资源</h1>
+      <h1>{t("space.page.title")}</h1>
       <div className="filter-bar">
         <div className="form-field">
           <label>状态</label>

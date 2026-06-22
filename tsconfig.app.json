@@ -17,6 +17,7 @@
   "include": [
     "src",
     "server",
+    "shared",
     "worker-configuration.d.ts",
     "tests/unit/**/*.ts",
     "tests/unit/**/*.tsx",

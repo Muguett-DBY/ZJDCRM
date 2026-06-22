@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
+import { useCopy } from "../../lib/copy-provider";
 
 export default function ReportsPage() {
+  const { t } = useCopy();
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState("");
   useEffect(() => {
@@ -21,7 +23,7 @@ export default function ReportsPage() {
 
   return (
     <div className="page">
-      <h1>数据报表</h1>
+      <h1>{t("report.page.title")}</h1>
       {error && <div className="form-error">{error}</div>}
       {!data ? <div className="loading-screen"><div className="spinner" /></div> : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16 }}>

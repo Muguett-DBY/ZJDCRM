@@ -1,8 +1,10 @@
 /* eslint-disable react-hooks/set-state-in-effect, @typescript-eslint/no-unused-vars, no-empty */
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
+import { useCopy } from "../../lib/copy-provider";
 
 export default function ImportJobsPage() {
+  const { t } = useCopy();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -12,7 +14,7 @@ export default function ImportJobsPage() {
 
   return (
     <div className="page">
-      <h1>导入任务</h1>
+      <h1>{t("admin.imports")}</h1>
       {loading ? <div className="loading-screen" style={{ minHeight: 200 }}><div className="spinner" /></div> : jobs.length === 0 ? (
         <div className="card" style={{ textAlign: "center", padding: 48 }}><p className="text-muted">暂无导入任务</p></div>
       ) : (

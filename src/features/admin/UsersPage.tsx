@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { useAuth } from "../auth/auth.store";
+import { useCopy } from "../../lib/copy-provider";
 
 interface User {
   id: string; account: string; display_name: string; mobile: string | null;
@@ -10,6 +11,7 @@ interface User {
 }
 
 export default function UsersPage() {
+  const { t } = useCopy();
   const { csrfToken } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,7 +99,7 @@ export default function UsersPage() {
   return (
     <div className="page">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h1>员工管理</h1>
+        <h1>{t("admin.users")}</h1>
         <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>{showForm ? "取消" : "新增员工"}</button>
       </div>
       {msg && <div className="form-error" style={{ marginBottom: 8 }}>{msg}</div>}

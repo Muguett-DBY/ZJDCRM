@@ -2,8 +2,10 @@
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { useAuth } from "../auth/auth.store";
+import { useCopy } from "../../lib/copy-provider";
 
 export default function DictionariesPage() {
+  const { t } = useCopy();
   const { csrfToken } = useAuth();
   const [data, setData] = useState<{ dictionaries: any[]; items: any[] }>({ dictionaries: [], items: [] });
   const [loading, setLoading] = useState(true);
@@ -33,7 +35,7 @@ export default function DictionariesPage() {
   return (
     <div className="page">
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
-        <h1>字典配置</h1>
+        <h1>{t("admin.dictionaries")}</h1>
         <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>{showForm ? "取消" : "新增字典"}</button>
       </div>
       {showForm && (

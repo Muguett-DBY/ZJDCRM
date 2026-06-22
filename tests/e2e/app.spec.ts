@@ -34,6 +34,7 @@ test.describe("authenticated application", () => {
       ["/admin/audit", "审计日志"],
       ["/admin/settings", "系统设置"],
       ["/admin/deleted", "数据恢复"],
+      ["/admin/copy", "文案管理"],
     ];
 
     for (const [route, heading] of routes) {
@@ -122,5 +123,23 @@ test.describe("authenticated application", () => {
     }));
     expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth);
     await expect(page.getByRole("heading", { name: "招商看板" })).toBeVisible();
+  });
+
+  test("publishes a managed label change to the clue list and form", async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto("/admin/copy");
+    const titleInput = page.getByLabel("线索名称");
+    await titleInput.fill("项目名称");
+    await page.getByRole("button", { name: "保存文案" }).click();
+    await expect(page.getByText("文案已保存并发布")).toBeVisible();
+
+    await page.goto("/clues");
+    await expect(page.getByRole("columnheader", { name: "项目名称" })).toBeVisible();
+    await page.goto("/clues/new");
+    await expect(page.getByLabel("项目名称 *")).toBeVisible();
+
+    await page.goto("/admin/copy");
+    await page.getByLabel("线索名称").fill("线索名称");
+    await page.getByRole("button", { name: "保存文案" }).click();
   });
 });

@@ -1,8 +1,10 @@
 /* eslint-disable react-hooks/set-state-in-effect, @typescript-eslint/no-unused-vars, no-empty */
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
+import { useCopy } from "../../lib/copy-provider";
 
 export default function AuditLogPage() {
+  const { t } = useCopy();
   const [data, setData] = useState<{ items: any[]; total: number }>({ items: [], total: 0 });
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -20,7 +22,7 @@ export default function AuditLogPage() {
 
   return (
     <div className="page">
-      <h1>审计日志</h1>
+      <h1>{t("admin.audit")}</h1>
       <div className="filter-bar">
         <div className="form-field"><label>操作类型</label>
           <select value={action} onChange={(e) => { setAction(e.target.value); setPage(1); }}>

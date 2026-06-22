@@ -13,6 +13,7 @@
   },
   "include": [
     "server/**/*.ts",
+    "shared/**/*.ts",
     "functions/**/*.ts",
     "tests/integration/**/*.ts",
     "tests/integration/**/*.tsx",

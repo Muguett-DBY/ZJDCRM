@@ -1,9 +1,11 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../../lib/api";
+import { useCopy } from "../../lib/copy-provider";
 import { useAuth } from "../auth/auth.store";
 
 export default function ExportRequestsPage() {
+  const { t } = useCopy();
   const { csrfToken } = useAuth();
   const [requests, setRequests] = useState<any[]>([]);
   const [reason, setReason] = useState("");
@@ -25,7 +27,7 @@ export default function ExportRequestsPage() {
 
   return (
     <div className="page">
-      <h1>导出管理</h1>
+      <h1>{t("export.page.title")}</h1>
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="card-header">申请导出招商线索</div>
         <div className="form-field"><label>导出原因 *</label><textarea value={reason} onChange={(event) => setReason(event.target.value)} /></div>

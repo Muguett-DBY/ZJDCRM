@@ -2,8 +2,10 @@
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { useAuth } from "../auth/auth.store";
+import { useCopy } from "../../lib/copy-provider";
 
 export default function AdminSpacesPage() {
+  const { t } = useCopy();
   const { csrfToken } = useAuth();
   const [spaces, setSpaces] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +53,7 @@ export default function AdminSpacesPage() {
   return (
     <div className="page">
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
-        <h1>空间管理</h1>
+        <h1>{t("admin.spaces")}</h1>
         <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>{showForm ? "取消" : "新增空间"}</button>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12, marginBottom: 16 }}>

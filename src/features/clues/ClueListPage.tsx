@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { api } from "../../lib/api";
+import { useCopy } from "../../lib/copy-provider";
 
 interface ClueItem {
   id: string;
@@ -41,6 +42,7 @@ const stageColors: Record<string, string> = {
 };
 
 export default function ClueListPage() {
+  const { t } = useCopy();
   const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState<PageData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,23 +83,23 @@ export default function ClueListPage() {
   return (
     <div className="page">
       <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h1>招商线索</h1>
-        <Link to="/clues/new" className="btn btn-primary">新增线索</Link>
+        <h1>{t("clue.page.title")}</h1>
+        <Link to="/clues/new" className="btn btn-primary">{t("clue.action.create")}</Link>
       </div>
 
       {/* Filter Bar */}
       <div className="filter-bar">
         <div className="form-field">
-          <label htmlFor="filter-search">搜索</label>
+          <label htmlFor="filter-search">{t("common.search")}</label>
           <input
             id="filter-search"
-            placeholder="线索名称/企业名称"
+            placeholder={`${t("clue.field.title")}/${t("clue.field.company")}`}
             value={search}
             onChange={(e) => updateParam("search", e.target.value)}
           />
         </div>
         <div className="form-field">
-          <label htmlFor="filter-stage">阶段</label>
+          <label htmlFor="filter-stage">{t("clue.field.stage")}</label>
           <select id="filter-stage" value={stage} onChange={(e) => updateParam("stage", e.target.value)}>
             <option value="">全部阶段</option>
             {Object.entries(stageLabels).map(([k, v]) => (
@@ -136,11 +138,11 @@ export default function ClueListPage() {
           <table>
             <thead>
               <tr>
-                <th>线索名称</th>
-                <th>企业名称</th>
-                <th>阶段</th>
+                <th>{t("clue.field.title")}</th>
+                <th>{t("clue.field.company")}</th>
+                <th>{t("clue.field.stage")}</th>
                 <th>渠道</th>
-                <th>需求面积</th>
+                <th>{t("clue.field.area")}</th>
                 <th>预计落位</th>
                 <th>更新时间</th>
                 <th>操作</th>
@@ -158,7 +160,7 @@ export default function ClueListPage() {
                   <td>{new Date(clue.updated_at).toLocaleDateString("zh-CN")}</td>
                   <td>
                     <Link to={`/clues/${clue.id}`} className="btn btn-ghost btn-sm">查看</Link>
-                    <Link to={`/clues/${clue.id}/edit`} className="btn btn-ghost btn-sm">编辑</Link>
+                    <Link to={`/clues/${clue.id}/edit`} className="btn btn-ghost btn-sm">{t("clue.action.edit")}</Link>
                   </td>
                 </tr>
               ))}

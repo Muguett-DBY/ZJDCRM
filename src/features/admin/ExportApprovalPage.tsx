@@ -2,8 +2,10 @@
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { useAuth } from "../auth/auth.store";
+import { useCopy } from "../../lib/copy-provider";
 
 export default function ExportApprovalPage() {
+  const { t } = useCopy();
   const { csrfToken } = useAuth();
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,7 +27,7 @@ export default function ExportApprovalPage() {
 
   return (
     <div className="page">
-      <h1>导出审批</h1>
+      <h1>{t("admin.exports")}</h1>
       {loading ? <div className="loading-screen" style={{ minHeight: 200 }}><div className="spinner" /></div> : requests.length === 0 ? (
         <div className="card" style={{ textAlign: "center", padding: 48 }}><p className="text-muted">暂无导出申请</p></div>
       ) : (

@@ -2,10 +2,12 @@
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { useAuth } from "../auth/auth.store";
+import { useCopy } from "../../lib/copy-provider";
 
 interface Dept { id: string; parent_id: string | null; code: string; name: string; sort_order: number; status: string; }
 
 export default function DepartmentsPage() {
+  const { t } = useCopy();
   const { csrfToken } = useAuth();
   const [depts, setDepts] = useState<Dept[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +30,7 @@ export default function DepartmentsPage() {
   return (
     <div className="page">
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
-        <h1>部门管理</h1>
+        <h1>{t("admin.departments")}</h1>
         <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>{showForm ? "取消" : "新增部门"}</button>
       </div>
       {showForm && (

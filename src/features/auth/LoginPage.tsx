@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { login } from "./auth.api";
 import { useAuth } from "./auth.store";
 import { useSiteSettings } from "../../lib/site-settings";
+import { useCopy } from "../../lib/copy-provider";
 
 type LoginError = { message: string };
 
@@ -14,6 +15,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const settings = useSiteSettings();
+  const { t } = useCopy();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +41,7 @@ export default function LoginPage() {
       <div className="login-card">
         <div className="login-header">
           {settings.logo_url && <img src={settings.logo_url} alt="" style={{ maxHeight: 56, maxWidth: 180 }} />}
-          <h1>{settings.site_name || "CFZZS"}</h1>
+          <h1>{settings.site_name || t("auth.login.title")}</h1>
           <p>{settings.login_text || "产业园区招商线索管理系统"}</p>
         </div>
         {settings.announcement && <div className="card" style={{ marginBottom: 16 }}>{settings.announcement}</div>}
@@ -50,7 +52,7 @@ export default function LoginPage() {
             </div>
           )}
           <div className="form-field">
-            <label htmlFor="account">账号</label>
+            <label htmlFor="account">{t("auth.login.account")}</label>
             <input
               id="account"
               type="text"
@@ -63,7 +65,7 @@ export default function LoginPage() {
             />
           </div>
           <div className="form-field">
-            <label htmlFor="password">密码</label>
+            <label htmlFor="password">{t("auth.login.password")}</label>
             <input
               id="password"
               type="password"
@@ -75,7 +77,7 @@ export default function LoginPage() {
             />
           </div>
           <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
-            {loading ? "登录中..." : "登 录"}
+            {loading ? "登录中..." : t("auth.login.submit")}
           </button>
         </form>
       </div>

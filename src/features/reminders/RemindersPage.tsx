@@ -2,9 +2,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../lib/api";
+import { useCopy } from "../../lib/copy-provider";
 import { useAuth } from "../auth/auth.store";
 
 export default function RemindersPage() {
+  const { t } = useCopy();
   const { csrfToken } = useAuth();
   const [data, setData] = useState<{ items: any[]; total: number }>({ items: [], total: 0 });
   const [unreadOnly, setUnreadOnly] = useState(false);
@@ -34,7 +36,7 @@ export default function RemindersPage() {
   return (
     <div className="page">
       <div className="page-header" style={{ display: "flex", justifyContent: "space-between" }}>
-        <h1>跟进提醒</h1>
+        <h1>{t("reminder.page.title")}</h1>
         <button className="btn" onClick={markAllRead}>全部标为已读</button>
       </div>
       <label><input type="checkbox" checked={unreadOnly} onChange={(event) => setUnreadOnly(event.target.checked)} /> 只看未读</label>

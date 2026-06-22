@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../../lib/api";
+import { useCopy } from "../../lib/copy-provider";
 
 export default function SpaceDetailPage() {
+  const { t } = useCopy();
   const { id } = useParams();
   const [space, setSpace] = useState<any>(null);
   const [error, setError] = useState("");
@@ -12,7 +14,7 @@ export default function SpaceDetailPage() {
 
   return (
     <div className="page">
-      <h1>空间详情</h1>
+      <h1>{t("space.detail.title")}</h1>
       {error ? <div className="form-error">{error}</div> : !space ? <div className="loading-screen"><div className="spinner" /></div> : (
         <div className="card" style={{ maxWidth: 720 }}>
           <div className="card-header">{space.name}（{space.code}）</div>

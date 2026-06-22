@@ -2,8 +2,10 @@
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { useAuth } from "../auth/auth.store";
+import { useCopy } from "../../lib/copy-provider";
 
 export default function DeletedRecordsPage() {
+  const { t } = useCopy();
   const { csrfToken } = useAuth();
   const [type, setType] = useState("clues");
   const [rows, setRows] = useState<any[]>([]);
@@ -24,7 +26,7 @@ export default function DeletedRecordsPage() {
   return (
     <div className="page">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h1>数据恢复</h1>
+        <h1>{t("admin.recovery")}</h1>
         <div className="form-field">
           <select value={type} onChange={(e) => setType(e.target.value)}>
             <option value="clues">线索</option>

@@ -2,8 +2,10 @@
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { useAuth } from "../auth/auth.store";
+import { useCopy } from "../../lib/copy-provider";
 
 export default function SystemSettingsPage() {
+  const { t } = useCopy();
   const { csrfToken } = useAuth();
   const [settings, setSettings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,7 +28,7 @@ export default function SystemSettingsPage() {
 
   return (
     <div className="page">
-      <h1>系统设置</h1>
+      <h1>{t("admin.settings")}</h1>
       {msg && <div style={{ padding: 8, background: "#e6f4ea", color: "#188038", borderRadius: 4, marginBottom: 8 }}>{msg}</div>}
       {loading ? <div className="loading-screen" style={{ minHeight: 200 }}><div className="spinner" /></div> : (
         <div className="card">

@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { api } from "../../lib/api";
+import { useCopy } from "../../lib/copy-provider";
 import { parseClueCsv } from "../../lib/csv";
 import { useAuth } from "../auth/auth.store";
 
 export default function ImportPage() {
+  const { t } = useCopy();
   const { csrfToken } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<any>(null);
@@ -31,7 +33,7 @@ export default function ImportPage() {
 
   return (
     <div className="page">
-      <h1>数据导入</h1>
+      <h1>{t("import.page.title")}</h1>
       <div className="card" style={{ maxWidth: 720 }}>
         <div className="card-header">招商线索 CSV</div>
         <p className="text-muted">表头支持：线索名称、企业名称、渠道来源、需求面积、行业、主营业务。未填写负责人时进入未分配线索池。</p>

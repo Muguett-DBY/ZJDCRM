@@ -2,9 +2,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../lib/api";
+import { useCopy } from "../../lib/copy-provider";
 import { useAuth } from "../auth/auth.store";
 
 export default function UnassignedPage() {
+  const { t } = useCopy();
   const { csrfToken } = useAuth();
   const [items, setItems] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
@@ -28,7 +30,7 @@ export default function UnassignedPage() {
 
   return (
     <div className="page">
-      <h1>未分配线索</h1>
+      <h1>{t("nav.unassigned")}</h1>
       {error && <div className="form-error">{error}</div>}
       {items.length === 0 ? <div className="card"><p className="text-muted">暂无未分配线索</p></div> : (
         <div className="table-wrapper"><table>

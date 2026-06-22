@@ -30,6 +30,7 @@ const ExportApprovalPage = lazy(() => import("../features/admin/ExportApprovalPa
 const AuditLogPage = lazy(() => import("../features/admin/AuditLogPage"));
 const AdminSettingsPage = lazy(() => import("../features/admin/SystemSettingsPage"));
 const DeletedRecordsPage = lazy(() => import("../features/admin/DeletedRecordsPage"));
+const CopyManagementPage = lazy(() => import("../features/admin/CopyManagementPage"));
 
 import AppShell from "./AppShell";
 import AdminShell from "./AdminShell";
@@ -71,6 +72,7 @@ export const routes: RouteObject[] = [
       { path: "audit", element: <AuditLogPage /> },
       { path: "settings", element: <AdminSettingsPage /> },
       { path: "deleted", element: <DeletedRecordsPage /> },
+      { path: "copy", element: <CopyManagementPage /> },
     ],
   },
 ];

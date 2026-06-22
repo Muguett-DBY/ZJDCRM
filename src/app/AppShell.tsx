@@ -2,24 +2,26 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { logout } from "../features/auth/auth.api";
 import { useAuth } from "../features/auth/auth.store";
 import { useSiteSettings } from "../lib/site-settings";
+import { useCopy } from "../lib/copy-provider";
 
 const navItems = [
-  { label: "首页看板", path: "/", icon: "📊", adminOnly: false },
-  { label: "招商线索", path: "/clues", icon: "📋", adminOnly: false },
-  { label: "未分配线索", path: "/unassigned", icon: "📥", adminOnly: false },
-  { label: "空间资源", path: "/spaces", icon: "🏢", adminOnly: false },
-  { label: "跟进提醒", path: "/reminders", icon: "🔔", adminOnly: false },
-  { label: "数据报表", path: "/reports", icon: "📈", adminOnly: false },
-  { label: "数据导入", path: "/imports", icon: "📤", adminOnly: false },
-  { label: "导出管理", path: "/exports", icon: "📎", adminOnly: false },
-  { label: "个人设置", path: "/profile", icon: "👤", adminOnly: false },
-  { label: "⚙️ 系统管理", path: "/admin", icon: "", adminOnly: true },
+  { key: "nav.dashboard", path: "/", icon: "📊", adminOnly: false },
+  { key: "nav.clues", path: "/clues", icon: "📋", adminOnly: false },
+  { key: "nav.unassigned", path: "/unassigned", icon: "📥", adminOnly: false },
+  { key: "nav.spaces", path: "/spaces", icon: "🏢", adminOnly: false },
+  { key: "nav.reminders", path: "/reminders", icon: "🔔", adminOnly: false },
+  { key: "nav.reports", path: "/reports", icon: "📈", adminOnly: false },
+  { key: "nav.imports", path: "/imports", icon: "📤", adminOnly: false },
+  { key: "nav.exports", path: "/exports", icon: "📎", adminOnly: false },
+  { key: "nav.profile", path: "/profile", icon: "👤", adminOnly: false },
+  { key: "nav.admin", path: "/admin", icon: "⚙️", adminOnly: true },
 ];
 
 export default function AppShell() {
   const { user, csrfToken, clearSession } = useAuth();
   const navigate = useNavigate();
   const settings = useSiteSettings();
+  const { t } = useCopy();
 
   const handleLogout = async () => {
     try {
@@ -47,7 +49,7 @@ export default function AppShell() {
               className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}
             >
               {item.icon && <span className="nav-icon">{item.icon}</span>}
-              <span className="nav-label">{item.label}</span>
+              <span className="nav-label">{t(item.key)}</span>
             </NavLink>
           ))}
         </nav>

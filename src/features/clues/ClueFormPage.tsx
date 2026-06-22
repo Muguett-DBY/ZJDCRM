@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../lib/api";
 import { useAuth } from "../auth/auth.store";
+import { useCopy } from "../../lib/copy-provider";
 
 interface FormData {
   title: string;
@@ -41,6 +42,7 @@ const defaultForm: FormData = {
 };
 
 export default function ClueFormPage() {
+  const { t } = useCopy();
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
   const navigate = useNavigate();
@@ -114,15 +116,15 @@ export default function ClueFormPage() {
 
   return (
     <div className="page" style={{ maxWidth: 800 }}>
-      <h1>{isEdit ? "编辑线索" : "新增线索"}</h1>
+      <h1>{isEdit ? `${t("clue.action.edit")}${t("clue.page.title")}` : t("clue.action.create")}</h1>
       {error && <div className="form-error" style={{ marginBottom: 16 }}>{error}</div>}
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {/* Basic Info */}
         <div className="card">
           <div className="card-header">基本信息</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div className="form-field"><label htmlFor="clue-title">线索名称 *</label><input id="clue-title" value={form.title} onChange={(e) => set("title", e.target.value)} required /></div>
-            <div className="form-field"><label htmlFor="company-name">企业名称 *</label><input id="company-name" value={form.companyName} onChange={(e) => set("companyName", e.target.value)} required /></div>
+            <div className="form-field"><label htmlFor="clue-title">{t("clue.field.title")} *</label><input id="clue-title" value={form.title} onChange={(e) => set("title", e.target.value)} required /></div>
+            <div className="form-field"><label htmlFor="company-name">{t("clue.field.company")} *</label><input id="company-name" value={form.companyName} onChange={(e) => set("companyName", e.target.value)} required /></div>
             <div className="form-field"><label>主营业务</label><input value={form.mainBusiness} onChange={(e) => set("mainBusiness", e.target.value)} /></div>
             <div className="form-field">
               <label>行业</label>
@@ -142,7 +144,7 @@ export default function ClueFormPage() {
                 <option value="visit">拜访</option><option value="internal">内部转介</option>
               </select>
             </div>
-            <div className="form-field"><label>阶段</label>
+            <div className="form-field"><label>{t("clue.field.stage")}</label>
               <select value={form.stageCode} onChange={(e) => set("stageCode", e.target.value)}>
                 <option value="new">新线索</option><option value="filed">已建档</option>
                 <option value="initial_contact">初步接触</option><option value="needs_confirmed">需求确认</option>
@@ -165,7 +167,7 @@ export default function ClueFormPage() {
         <div className="card">
           <div className="card-header">空间与效益需求</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div className="form-field"><label>需求面积 (㎡)</label><input type="number" value={form.desiredArea} onChange={(e) => set("desiredArea", e.target.value)} /></div>
+            <div className="form-field"><label>{t("clue.field.area")} (㎡)</label><input type="number" value={form.desiredArea} onChange={(e) => set("desiredArea", e.target.value)} /></div>
             <div className="form-field"><label>获取日期</label><input type="date" value={form.acquiredAt} onChange={(e) => set("acquiredAt", e.target.value)} /></div>
             <div className="form-field"><label>预计落位日期</label><input type="date" value={form.expectedLandingAt} onChange={(e) => set("expectedLandingAt", e.target.value)} /></div>
             <div className="form-field"><label>核心卡点</label><input value={form.bottleneck} onChange={(e) => set("bottleneck", e.target.value)} /></div>
@@ -215,9 +217,9 @@ export default function ClueFormPage() {
         {/* Actions */}
         <div style={{ display: "flex", gap: 8 }}>
           <button type="submit" className="btn btn-primary" disabled={saving}>
-            {saving ? "保存中..." : "保存"}
+            {saving ? "保存中..." : t("clue.action.save")}
           </button>
-          <button type="button" className="btn" onClick={() => navigate(-1)} disabled={saving}>取消</button>
+          <button type="button" className="btn" onClick={() => navigate(-1)} disabled={saving}>{t("common.cancel")}</button>
         </div>
       </form>
     </div>

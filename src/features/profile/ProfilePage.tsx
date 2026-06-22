@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { api } from "../../lib/api";
+import { useCopy } from "../../lib/copy-provider";
 import { useAuth } from "../auth/auth.store";
 
 export default function ProfilePage() {
+  const { t } = useCopy();
   const { user, csrfToken } = useAuth();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -33,7 +35,7 @@ export default function ProfilePage() {
 
   return (
     <div className="page" style={{ maxWidth: 500 }}>
-      <h1>个人设置</h1>
+      <h1>{t("nav.profile")}</h1>
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="card-header">账号信息</div>
         <p>账号：{user?.account}</p>

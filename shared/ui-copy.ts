@@ -1,0 +1,65 @@
+export type UiCopyEntry = {
+  key: string;
+  group: string;
+  label: string;
+  defaultValue: string;
+};
+
+export const UI_COPY_ENTRIES: UiCopyEntry[] = [
+  { key: "auth.login.title", group: "登录页", label: "网站标题", defaultValue: "CFZZS" },
+  { key: "auth.login.account", group: "登录页", label: "账号", defaultValue: "账号" },
+  { key: "auth.login.password", group: "登录页", label: "密码", defaultValue: "密码" },
+  { key: "auth.login.submit", group: "登录页", label: "登录按钮", defaultValue: "登 录" },
+  { key: "nav.dashboard", group: "业务导航", label: "首页看板", defaultValue: "首页看板" },
+  { key: "nav.clues", group: "业务导航", label: "招商线索", defaultValue: "招商线索" },
+  { key: "nav.unassigned", group: "业务导航", label: "未分配线索", defaultValue: "未分配线索" },
+  { key: "nav.spaces", group: "业务导航", label: "空间资源", defaultValue: "空间资源" },
+  { key: "nav.reminders", group: "业务导航", label: "跟进提醒", defaultValue: "跟进提醒" },
+  { key: "nav.reports", group: "业务导航", label: "数据报表", defaultValue: "数据报表" },
+  { key: "nav.imports", group: "业务导航", label: "数据导入", defaultValue: "数据导入" },
+  { key: "nav.exports", group: "业务导航", label: "导出管理", defaultValue: "导出管理" },
+  { key: "nav.profile", group: "业务导航", label: "个人设置", defaultValue: "个人设置" },
+  { key: "nav.admin", group: "业务导航", label: "系统管理", defaultValue: "系统管理" },
+  { key: "dashboard.page.title", group: "首页看板", label: "页面标题", defaultValue: "招商看板" },
+  { key: "clue.page.title", group: "招商线索", label: "页面标题", defaultValue: "招商线索" },
+  { key: "clue.field.title", group: "招商线索", label: "线索名称", defaultValue: "线索名称" },
+  { key: "clue.field.company", group: "招商线索", label: "企业名称", defaultValue: "企业名称" },
+  { key: "clue.field.stage", group: "招商线索", label: "阶段", defaultValue: "阶段" },
+  { key: "clue.field.area", group: "招商线索", label: "需求面积", defaultValue: "需求面积" },
+  { key: "clue.action.create", group: "招商线索", label: "新增线索", defaultValue: "新增线索" },
+  { key: "clue.action.save", group: "招商线索", label: "保存", defaultValue: "保存" },
+  { key: "clue.action.edit", group: "招商线索", label: "编辑", defaultValue: "编辑" },
+  { key: "clue.contacts", group: "招商线索", label: "联系人", defaultValue: "联系人" },
+  { key: "clue.followups", group: "招商线索", label: "跟进时间线", defaultValue: "跟进时间线" },
+  { key: "clue.attachments", group: "招商线索", label: "附件", defaultValue: "附件" },
+  { key: "space.page.title", group: "空间资源", label: "页面标题", defaultValue: "空间资源" },
+  { key: "space.detail.title", group: "空间资源", label: "详情标题", defaultValue: "空间详情" },
+  { key: "space.park", group: "空间资源", label: "园区", defaultValue: "园区" },
+  { key: "space.building", group: "空间资源", label: "楼宇", defaultValue: "楼宇" },
+  { key: "space.floor", group: "空间资源", label: "楼层", defaultValue: "楼层" },
+  { key: "import.page.title", group: "导入导出", label: "导入标题", defaultValue: "数据导入" },
+  { key: "import.action.start", group: "导入导出", label: "开始导入", defaultValue: "开始导入" },
+  { key: "export.page.title", group: "导入导出", label: "导出标题", defaultValue: "导出管理" },
+  { key: "report.page.title", group: "报表提醒", label: "报表标题", defaultValue: "数据报表" },
+  { key: "reminder.page.title", group: "报表提醒", label: "提醒标题", defaultValue: "跟进提醒" },
+  { key: "admin.dashboard", group: "后台管理", label: "后台首页", defaultValue: "后台首页" },
+  { key: "admin.users", group: "后台管理", label: "员工管理", defaultValue: "员工管理" },
+  { key: "admin.departments", group: "后台管理", label: "部门管理", defaultValue: "部门管理" },
+  { key: "admin.roles", group: "后台管理", label: "角色权限", defaultValue: "角色权限" },
+  { key: "admin.dictionaries", group: "后台管理", label: "字典配置", defaultValue: "字典配置" },
+  { key: "admin.spaces", group: "后台管理", label: "空间管理", defaultValue: "空间管理" },
+  { key: "admin.imports", group: "后台管理", label: "导入任务", defaultValue: "导入任务" },
+  { key: "admin.exports", group: "后台管理", label: "导出审批", defaultValue: "导出审批" },
+  { key: "admin.audit", group: "后台管理", label: "审计日志", defaultValue: "审计日志" },
+  { key: "admin.settings", group: "后台管理", label: "系统设置", defaultValue: "系统设置" },
+  { key: "admin.recovery", group: "后台管理", label: "数据恢复", defaultValue: "数据恢复" },
+  { key: "admin.copy", group: "后台管理", label: "文案管理", defaultValue: "文案管理" },
+  { key: "common.search", group: "通用", label: "搜索", defaultValue: "搜索" },
+  { key: "common.cancel", group: "通用", label: "取消", defaultValue: "取消" },
+  { key: "common.delete", group: "通用", label: "删除", defaultValue: "删除" },
+  { key: "common.download", group: "通用", label: "下载", defaultValue: "下载" },
+  { key: "common.save", group: "通用", label: "保存", defaultValue: "保存" },
+];
+
+export const UI_COPY_KEYS = new Set(UI_COPY_ENTRIES.map((entry) => entry.key));
+export const UI_COPY_DEFAULTS = Object.fromEntries(UI_COPY_ENTRIES.map((entry) => [entry.key, entry.defaultValue]));

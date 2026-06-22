@@ -1,8 +1,10 @@
 /* eslint-disable react-hooks/set-state-in-effect, @typescript-eslint/no-unused-vars, no-empty */
+import { useCopy } from "../../lib/copy-provider";
 export default function AdminDashboardPage() {
+  const { t } = useCopy();
   return (
     <div className="page">
-      <h1>后台首页</h1>
+      <h1>{t("admin.dashboard")}</h1>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
         <div className="stat-card">
           <div className="stat-value">

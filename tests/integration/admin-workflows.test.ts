@@ -356,6 +356,27 @@ describe("admin safety and account management", () => {
     });
     expect(publicSettings.body.data).not.toHaveProperty("internal_secret");
   });
+
+  it("lets the administrator save, publish, and reset registered UI copy", async () => {
+    const saved = await request("PUT", "/api/admin/content", {
+      overrides: { "clue.field.title": "项目名称" },
+    });
+    expect(saved.status).toBe(200);
+
+    const publicCopy = await request("GET", "/api/content/public");
+    expect(publicCopy.status).toBe(200);
+    expect(publicCopy.body.data).toEqual({ "clue.field.title": "项目名称" });
+
+    const invalid = await request("PUT", "/api/admin/content", {
+      overrides: { "unknown.copy.key": "不应保存" },
+    });
+    expect(invalid.status).toBe(400);
+    expect(invalid.body.error?.code).toBe("INVALID_COPY_KEY");
+
+    const reset = await request("DELETE", "/api/admin/content/clue.field.title");
+    expect(reset.status).toBe(200);
+    expect((await request("GET", "/api/content/public")).body.data).toEqual({});
+  });
 });
 
 describe("operational workflows", () => {

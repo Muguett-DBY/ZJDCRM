@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { App } from "./app/App";
 import { AuthProvider } from "./features/auth/auth.store";
+import { CopyProvider } from "./lib/copy-provider";
 import "./styles/global.css";
 
 const queryClient = new QueryClient({
@@ -20,9 +21,11 @@ createRoot(root).render(
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <Suspense fallback={<div className="loading-screen"><div className="spinner" /><span>加载中...</span></div>}>
-            <App />
-          </Suspense>
+          <CopyProvider>
+            <Suspense fallback={<div className="loading-screen"><div className="spinner" /><span>加载中...</span></div>}>
+              <App />
+            </Suspense>
+          </CopyProvider>
         </AuthProvider>
       </QueryClientProvider>
     </BrowserRouter>

@@ -2,10 +2,12 @@
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { useAuth } from "../auth/auth.store";
+import { useCopy } from "../../lib/copy-provider";
 
 interface Role { id: string; code: string; name: string; description: string | null; is_system: number; status: string; }
 
 export default function RolesPage() {
+  const { t } = useCopy();
   const { csrfToken } = useAuth();
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +59,7 @@ export default function RolesPage() {
   return (
     <div className="page">
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
-        <h1>角色权限</h1>
+        <h1>{t("admin.roles")}</h1>
         <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>{showForm ? "取消" : "新增角色"}</button>
       </div>
       {showForm && (

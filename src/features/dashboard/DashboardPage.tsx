@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../lib/api";
+import { useCopy } from "../../lib/copy-provider";
 
 interface DashboardData {
   newClues: number;
@@ -24,6 +25,7 @@ const stageLabels: Record<string, string> = {
 };
 
 export default function DashboardPage() {
+  const { t } = useCopy();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState(() => {
@@ -45,7 +47,7 @@ export default function DashboardPage() {
   return (
     <div className="page">
       <div className="dashboard-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h1>招商看板</h1>
+        <h1>{t("dashboard.page.title")}</h1>
         <div className="dashboard-filters" style={{ display: "flex", gap: 8 }}>
           <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ padding: "4px 8px", border: "1px solid var(--color-border)", borderRadius: 4 }} />
           <span style={{ alignSelf: "center" }}>至</span>
