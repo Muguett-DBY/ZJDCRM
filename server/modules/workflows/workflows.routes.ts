@@ -142,7 +142,7 @@ async function ensureImportedSpace(db: D1Database, row: Record<string, any>, use
 async function requestAiImportReview(env: any, preview: any): Promise<any | null> {
   const apiKey = String(env.OPENCODE_GO_API_KEY || "").trim();
   if (!apiKey) return null;
-  const compactRows = preview.leadRows.slice(0, 60).map((row: any, index: number) => ({
+  const compactRows = preview.leadRows.slice(0, 20).map((row: any, index: number) => ({
     index,
     companyName: row.companyName,
     mainBusiness: row.mainBusiness,
@@ -154,46 +154,58 @@ async function requestAiImportReview(env: any, preview: any): Promise<any | null
     bottleneck: row.bottleneck,
     followupSummary: String(row.followupContent || "").slice(0, 180),
   }));
-  const response = await fetch("https://opencode.ai/zen/go/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      authorization: `Bearer ${apiKey}`,
-      "content-type": "application/json; charset=utf-8",
-    },
-    body: JSON.stringify({
-      model: "mimo-v2.5",
-      reasoning_effort: "high",
-      temperature: 0,
-      max_tokens: 3000,
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "user",
-          content: [
-            "你是 CFZZS 招商台账导入校验器。只返回 JSON。",
-            "下面 rows 已由规则解析。请只指出需要修正的字段，不要原样返回全部 rows。",
-            "patches 最多 20 条；没有明确错误就返回空数组。",
-            "允许修正字段：industryCode、sourceCode、stageCode、tags。不要新增不存在的客户，不要改 title/companyName。",
-            "合法行业：medical_devices, pharma, ai, integrated_circuit, smart_manufacturing, other。",
-            "合法渠道：activity, referral, gov, visit, null。",
-            "合法阶段：new, initial_contact, site_visit, signed, landed, lost。",
-            "返回格式严格为：{\"patches\":[{\"index\":0,\"industryCode\":\"...\",\"sourceCode\":\"...\",\"stageCode\":\"...\",\"tags\":[\"...\"]}],\"warnings\":[]}",
-            JSON.stringify({ rows: compactRows, warnings: preview.warnings }),
-          ].join("\n"),
-        },
-      ],
-    }),
-  });
-  if (!response.ok) throw new Error(`OpenCode Go 调用失败：${response.status}`);
-  const body = await response.json() as any;
-  const content = body?.choices?.[0]?.message?.content;
-  if (!content) return null;
-  const text = String(content).trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/g, "").trim();
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  if (start < 0 || end <= start) throw new Error("AI 校验没有返回完整 JSON，已使用规则解析结果");
-  const parsed = JSON.parse(text.slice(start, end + 1));
-  return parsed && typeof parsed === "object" ? parsed : null;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 70_000);
+  try {
+    const response = await fetch("https://opencode.ai/zen/go/v1/chat/completions", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        "content-type": "application/json; charset=utf-8",
+      },
+      body: JSON.stringify({
+        model: "mimo-v2.5",
+        reasoning_effort: "high",
+        temperature: 0,
+        max_tokens: 1200,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "user",
+            content: [
+              "你是 CFZZS 招商台账导入校验器。只返回 JSON。",
+              "下面 rows 已由规则解析。请只指出需要修正的字段，不要原样返回全部 rows。",
+              "patches 最多 10 条；没有明确错误就返回空数组。",
+              "允许修正字段：industryCode、sourceCode、stageCode、tags。不要新增不存在的客户，不要改 title/companyName。",
+              "合法行业：medical_devices, pharma, ai, integrated_circuit, smart_manufacturing, other。",
+              "合法渠道：activity, referral, gov, visit, null。",
+              "合法阶段：new, initial_contact, site_visit, signed, landed, lost。",
+              "返回格式严格为：{\"patches\":[{\"index\":0,\"industryCode\":\"...\",\"sourceCode\":\"...\",\"stageCode\":\"...\",\"tags\":[\"...\"]}],\"warnings\":[]}",
+              JSON.stringify({ rows: compactRows, warnings: preview.warnings }),
+            ].join("\n"),
+          },
+        ],
+      }),
+    });
+    if (!response.ok) throw new Error(`OpenCode Go 调用失败：${response.status}`);
+    const body = await response.json() as any;
+    const content = body?.choices?.[0]?.message?.content;
+    if (!content) return null;
+    const text = String(content).trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/g, "").trim();
+    const start = text.indexOf("{");
+    const end = text.lastIndexOf("}");
+    if (start < 0 || end <= start) throw new Error("AI 校验没有返回完整 JSON，已使用规则解析结果");
+    const parsed = JSON.parse(text.slice(start, end + 1));
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch (cause) {
+    if (cause instanceof Error && cause.name === "AbortError") {
+      throw new Error("AI 校验超时，已使用规则解析结果");
+    }
+    throw cause;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export function registerWorkflowRoutes(app: Hono): void {
