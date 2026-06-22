@@ -142,7 +142,7 @@ async function ensureImportedSpace(db: D1Database, row: Record<string, any>, use
 async function requestAiImportReview(env: any, preview: any): Promise<any | null> {
   const apiKey = String(env.OPENCODE_GO_API_KEY || "").trim();
   if (!apiKey) return null;
-  const compactRows = preview.leadRows.slice(0, 200).map((row: any, index: number) => ({
+  const compactRows = preview.leadRows.slice(0, 60).map((row: any, index: number) => ({
     index,
     companyName: row.companyName,
     mainBusiness: row.mainBusiness,
@@ -164,13 +164,15 @@ async function requestAiImportReview(env: any, preview: any): Promise<any | null
       model: "mimo-v2.5",
       reasoning_effort: "high",
       temperature: 0,
-      max_tokens: 6000,
+      max_tokens: 3000,
+      response_format: { type: "json_object" },
       messages: [
         {
           role: "user",
           content: [
             "你是 CFZZS 招商台账导入校验器。只返回 JSON。",
             "下面 rows 已由规则解析。请只指出需要修正的字段，不要原样返回全部 rows。",
+            "patches 最多 20 条；没有明确错误就返回空数组。",
             "允许修正字段：industryCode、sourceCode、stageCode、tags。不要新增不存在的客户，不要改 title/companyName。",
             "合法行业：medical_devices, pharma, ai, integrated_circuit, smart_manufacturing, other。",
             "合法渠道：activity, referral, gov, visit, null。",
