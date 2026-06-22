@@ -379,6 +379,16 @@ export function registerAdminRoutes(app: Hono): void {
     return c.json({ ok: true, data: { id } }, 201);
   });
 
+  app.get("/api/dictionaries/:code/items", requireAuth, async (c) => {
+    const dictionary = await queryOne<{ id: string }>(c.env.DB,
+      "SELECT id FROM dictionaries WHERE code = ? AND status = 'active' AND deleted_at IS NULL", c.req.param("code"));
+    if (!dictionary) return c.json({ ok: true, data: [] });
+    const items = await queryAll(c.env.DB,
+      "SELECT id, code, name, value, sort_order FROM dictionary_items WHERE dictionary_id = ? AND status = 'active' AND deleted_at IS NULL ORDER BY sort_order, name",
+      dictionary.id);
+    return c.json({ ok: true, data: items });
+  });
+
   app.post("/api/admin/dictionaries/:id/items", requireAuth, requireCsrf, adminGuard(), async (c) => {
     const user = c.get("user");
     const body = await c.req.json() as Record<string, any>;
@@ -397,6 +407,36 @@ export function registerAdminRoutes(app: Hono): void {
       now, user.id, now, user.id,
     );
     return c.json({ ok: true, data: { id } }, 201);
+  });
+
+  app.put("/api/admin/dictionaries/:dictionaryId/items/:itemId", requireAuth, requireCsrf, adminGuard(), async (c) => {
+    const user = c.get("user");
+    const body = await c.req.json() as Record<string, unknown>;
+    const name = String(body.name || "").trim();
+    const status = String(body.status || "active");
+    if (!name || !["active", "disabled"].includes(status)) {
+      return c.json({ ok: false, error: { code: "VALIDATION_ERROR", message: "名称不能为空，状态必须为启用或停用", requestId: c.get("requestId") } }, 400);
+    }
+    const item = await queryOne<{ id: string }>(c.env.DB,
+      "SELECT id FROM dictionary_items WHERE id = ? AND dictionary_id = ? AND deleted_at IS NULL", c.req.param("itemId"), c.req.param("dictionaryId"));
+    if (!item) return c.json({ ok: false, error: { code: "NOT_FOUND", message: "字典项不存在", requestId: c.get("requestId") } }, 404);
+    const now = nowIsoUtc();
+    await execute(c.env.DB,
+      "UPDATE dictionary_items SET name = ?, value = ?, sort_order = ?, status = ?, updated_at = ?, updated_by = ? WHERE id = ?",
+      name, String(body.value || "").trim() || null, Number(body.sortOrder || 0), status, now, user.id, item.id);
+    await writeAuditLog(c.env.DB, { actorId: user.id, action: "admin:dictionary-item:update", entityType: "dictionary_item", entityId: item.id, requestId: c.get("requestId"), ipAddress: c.req.header("cf-connecting-ip") || null, userAgent: c.req.header("user-agent") || null, summary: { status } });
+    return c.json({ ok: true, data: { id: item.id } });
+  });
+
+  app.delete("/api/admin/dictionaries/:dictionaryId/items/:itemId", requireAuth, requireCsrf, adminGuard(), async (c) => {
+    const user = c.get("user");
+    const item = await queryOne<{ id: string }>(c.env.DB,
+      "SELECT id FROM dictionary_items WHERE id = ? AND dictionary_id = ? AND deleted_at IS NULL", c.req.param("itemId"), c.req.param("dictionaryId"));
+    if (!item) return c.json({ ok: false, error: { code: "NOT_FOUND", message: "字典项不存在", requestId: c.get("requestId") } }, 404);
+    const now = nowIsoUtc();
+    await execute(c.env.DB, "UPDATE dictionary_items SET deleted_at = ?, deleted_by = ?, updated_at = ?, updated_by = ? WHERE id = ?", now, user.id, now, user.id, item.id);
+    await writeAuditLog(c.env.DB, { actorId: user.id, action: "admin:dictionary-item:delete", entityType: "dictionary_item", entityId: item.id, requestId: c.get("requestId"), ipAddress: c.req.header("cf-connecting-ip") || null, userAgent: c.req.header("user-agent") || null, summary: {} });
+    return c.json({ ok: true, data: null });
   });
 
   app.get("/api/admin/space-hierarchy", requireAuth, adminGuard(), async (c) => {

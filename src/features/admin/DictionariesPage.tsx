@@ -12,6 +12,8 @@ export default function DictionariesPage() {
   const [form, setForm] = useState({ code: "", name: "", category: "" });
   const [showForm, setShowForm] = useState(false);
   const [itemForms, setItemForms] = useState<Record<string, { code: string; name: string; value: string }>>({});
+  const [itemDrafts, setItemDrafts] = useState<Record<string, { name: string; value: string; sortOrder: string }>>({});
+  const [message, setMessage] = useState("");
 
   const fetch = async () => {
     setLoading(true);
@@ -22,14 +24,33 @@ export default function DictionariesPage() {
     const item = itemForms[dictionaryId] || { code: "", name: "", value: "" };
     await api.post(`/admin/dictionaries/${dictionaryId}/items`, item, csrfToken);
     setItemForms({ ...itemForms, [dictionaryId]: { code: "", name: "", value: "" } });
-    fetch();
+    await fetch();
   };
   useEffect(() => { fetch(); }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     await api.post("/admin/dictionaries", form, csrfToken);
-    setShowForm(false); setForm({ code: "", name: "", category: "" }); fetch();
+    setShowForm(false); setForm({ code: "", name: "", category: "" }); await fetch();
+  };
+
+  const draftFor = (item: any) => itemDrafts[item.id] || { name: item.name, value: item.value || "", sortOrder: String(item.sort_order || 0) };
+  const saveItem = async (dictId: string, item: any) => {
+    const draft = draftFor(item);
+    await api.put(`/admin/dictionaries/${dictId}/items/${item.id}`, { ...draft, sortOrder: Number(draft.sortOrder), status: item.status }, csrfToken);
+    setMessage("字典项已保存");
+    await fetch();
+  };
+  const toggleItem = async (dictId: string, item: any) => {
+    const draft = draftFor(item);
+    await api.put(`/admin/dictionaries/${dictId}/items/${item.id}`, { ...draft, sortOrder: Number(draft.sortOrder), status: item.status === "active" ? "disabled" : "active" }, csrfToken);
+    await fetch();
+  };
+  const removeItem = async (dictId: string, item: any) => {
+    if (!window.confirm(`删除字典项“${item.name}”？`)) return;
+    await api.delete(`/admin/dictionaries/${dictId}/items/${item.id}`, csrfToken);
+    setMessage("字典项已删除");
+    await fetch();
   };
 
   return (
@@ -38,6 +59,7 @@ export default function DictionariesPage() {
         <h1>{t("admin.dictionaries")}</h1>
         <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>{showForm ? "取消" : "新增字典"}</button>
       </div>
+      {message && <div className="form-error" style={{ marginBottom: 12 }}>{message}</div>}
       {showForm && (
         <div className="card" style={{ marginBottom: 16 }}>
           <form onSubmit={handleCreate} style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
@@ -60,12 +82,16 @@ export default function DictionariesPage() {
                 <button className="btn btn-sm" disabled={!itemForms[dict.id]?.code || !itemForms[dict.id]?.name} onClick={() => addItem(dict.id)}>新增项目</button>
               </div>
               <table>
-                <thead><tr><th>编码</th><th>名称</th><th>排序</th><th>状态</th></tr></thead>
+                <thead><tr><th>编码</th><th>名称</th><th>值</th><th>排序</th><th>状态</th><th>操作</th></tr></thead>
                 <tbody>
                   {data.items.filter((i: any) => i.dictionary_id === dict.id).map((item: any) => (
                     <tr key={item.id}>
-                      <td>{item.code}</td><td>{item.name}</td><td>{item.sort_order}</td>
+                      <td>{item.code}</td>
+                      <td><input aria-label={`${dict.name}${item.code}名称`} value={draftFor(item).name} onChange={(event) => setItemDrafts({ ...itemDrafts, [item.id]: { ...draftFor(item), name: event.target.value } })} /></td>
+                      <td><input aria-label={`${dict.name}${item.code}值`} value={draftFor(item).value} onChange={(event) => setItemDrafts({ ...itemDrafts, [item.id]: { ...draftFor(item), value: event.target.value } })} /></td>
+                      <td><input aria-label={`${dict.name}${item.code}排序`} type="number" value={draftFor(item).sortOrder} onChange={(event) => setItemDrafts({ ...itemDrafts, [item.id]: { ...draftFor(item), sortOrder: event.target.value } })} /></td>
                       <td><span className={`badge ${item.status === "active" ? "badge-success" : "badge-danger"}`}>{item.status}</span></td>
+                      <td><button className="btn btn-ghost btn-sm" onClick={() => saveItem(dict.id, item)}>保存</button><button className="btn btn-ghost btn-sm" onClick={() => toggleItem(dict.id, item)}>{item.status === "active" ? "停用" : "启用"}</button><button className="btn btn-ghost btn-sm" onClick={() => removeItem(dict.id, item)}>删除</button></td>
                     </tr>
                   ))}
                 </tbody>

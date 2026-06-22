@@ -340,6 +340,34 @@ describe("admin safety and account management", () => {
     );
   });
 
+  it("publishes active industry items and lets the administrator maintain them", async () => {
+    const dictionary = await request("POST", "/api/admin/dictionaries", {
+      code: "industry", name: "行业", category: "business",
+    });
+    const dictionaryId = dictionary.body.data?.id as string;
+    const item = await request("POST", `/api/admin/dictionaries/${dictionaryId}/items`, {
+      code: "robotics", name: "机器人", value: "robotics", sortOrder: 10,
+    });
+    const itemId = item.body.data?.id as string;
+
+    const activeItems = await request("GET", "/api/dictionaries/industry/items");
+    expect(activeItems.status).toBe(200);
+    expect(activeItems.body.data).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: itemId, code: "robotics", name: "机器人" }),
+    ]));
+
+    const updated = await request("PUT", `/api/admin/dictionaries/${dictionaryId}/items/${itemId}`, {
+      name: "智能机器人", value: "robotics", sortOrder: 5, status: "disabled",
+    });
+    expect(updated.status).toBe(200);
+    expect((await request("GET", "/api/dictionaries/industry/items")).body.data).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: itemId }),
+    ]));
+
+    const removed = await request("DELETE", `/api/admin/dictionaries/${dictionaryId}/items/${itemId}`);
+    expect(removed.status).toBe(200);
+  });
+
   it("publishes only website-facing system settings", async () => {
     const saved = await request("PUT", "/api/admin/settings", [
       { key: "site_name", value: "Configured CRM" },

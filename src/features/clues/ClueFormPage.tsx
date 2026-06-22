@@ -31,6 +31,8 @@ interface FormData {
   version?: number;
 }
 
+type DictionaryItem = { id: string; code: string; name: string; value: string };
+
 const defaultForm: FormData = {
   title: "", companyName: "", mainBusiness: "", industryCode: "other",
   desiredArea: "", acquiredAt: new Date().toISOString().split("T")[0],
@@ -52,11 +54,18 @@ export default function ClueFormPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [spaces, setSpaces] = useState<any[]>([]);
+  const [industries, setIndustries] = useState<DictionaryItem[]>([]);
 
   useEffect(() => {
     api.get<any>("/spaces", { pageSize: "100" })
       .then((data) => setSpaces(data.items || []))
       .catch(() => setSpaces([]));
+  }, []);
+
+  useEffect(() => {
+    api.get<DictionaryItem[]>("/dictionaries/industry/items")
+      .then(setIndustries)
+      .catch(() => setIndustries([]));
   }, []);
 
   useEffect(() => {
@@ -129,12 +138,8 @@ export default function ClueFormPage() {
             <div className="form-field">
               <label>行业</label>
               <select value={form.industryCode} onChange={(e) => set("industryCode", e.target.value)}>
-                <option value="medical_devices">医疗器械</option>
-                <option value="pharma">医药健康</option>
-                <option value="ai">AI/人工智能</option>
-                <option value="integrated_circuit">集成电路</option>
-                <option value="smart_manufacturing">智能制造</option>
-                <option value="other">其他</option>
+                {!industries.some((item) => (item.value || item.code) === form.industryCode) && <option value={form.industryCode}>{form.industryCode === "other" ? "其他" : `历史行业：${form.industryCode}`}</option>}
+                {industries.map((item) => <option key={item.id} value={item.value || item.code}>{item.name}</option>)}
               </select>
             </div>
             <div className="form-field"><label>渠道来源</label>

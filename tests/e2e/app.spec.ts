@@ -142,4 +142,21 @@ test.describe("authenticated application", () => {
     await page.getByLabel("线索名称").fill("线索名称");
     await page.getByRole("button", { name: "保存文案" }).click();
   });
+
+  test("lets the administrator add an industry option used by the clue form", async ({ page }) => {
+    await loginAsAdmin(page);
+    const suffix = Date.now().toString();
+    const code = `robotics-${suffix}`;
+    const name = `机器人${suffix}`;
+
+    await page.goto("/admin/dictionaries");
+    await expect(page.getByText("行业（industry）")).toBeVisible();
+    await page.getByLabel("行业项目编码").fill(code);
+    await page.getByLabel("行业项目名称").fill(name);
+    await page.getByLabel("行业项目值").fill(code);
+    await page.locator(".card").filter({ hasText: "行业（industry）" }).getByRole("button", { name: "新增项目" }).click();
+
+    await page.goto("/clues/new");
+    await expect(page.getByRole("option", { name })).toHaveCount(1);
+  });
 });
