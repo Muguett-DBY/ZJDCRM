@@ -50,6 +50,17 @@ export function registerClueRoutes(app: Hono): void {
     const offset = (page - 1) * pageSize;
     const stage = c.req.query("stage");
     const source = c.req.query("source");
+    const industry = c.req.query("industry");
+    const tag = c.req.query("tag");
+    const owner = c.req.query("owner");
+    const acquiredFrom = c.req.query("acquiredFrom");
+    const acquiredTo = c.req.query("acquiredTo");
+    const expectedFrom = c.req.query("expectedFrom");
+    const expectedTo = c.req.query("expectedTo");
+    const updatedFrom = c.req.query("updatedFrom");
+    const updatedTo = c.req.query("updatedTo");
+    const areaMin = c.req.query("areaMin");
+    const areaMax = c.req.query("areaMax");
     const search = c.req.query("search");
     const unassigned = c.req.query("unassigned") === "true";
     const sortBy = c.req.query("sortBy") || "updated_at";
@@ -73,6 +84,54 @@ export function registerClueRoutes(app: Hono): void {
       conditions.push("c.source_code = ?");
       params.push(source);
     }
+    if (industry) {
+      conditions.push("co.industry_code = ?");
+      params.push(industry);
+    }
+    if (owner) {
+      conditions.push("c.owner_id = ?");
+      params.push(owner);
+    }
+    if (tag) {
+      conditions.push(`EXISTS (
+        SELECT 1 FROM clue_tags fct
+        JOIN tags ft ON ft.id = fct.tag_id
+        WHERE fct.clue_id = c.id AND ft.deleted_at IS NULL AND ft.status = 'active' AND ft.name = ?
+      )`);
+      params.push(tag);
+    }
+    if (acquiredFrom) {
+      conditions.push("c.acquired_at >= ?");
+      params.push(acquiredFrom);
+    }
+    if (acquiredTo) {
+      conditions.push("c.acquired_at <= ?");
+      params.push(acquiredTo);
+    }
+    if (expectedFrom) {
+      conditions.push("c.expected_landing_at >= ?");
+      params.push(expectedFrom);
+    }
+    if (expectedTo) {
+      conditions.push("c.expected_landing_at <= ?");
+      params.push(expectedTo);
+    }
+    if (updatedFrom) {
+      conditions.push("c.updated_at >= ?");
+      params.push(`${updatedFrom}T00:00:00.000Z`);
+    }
+    if (updatedTo) {
+      conditions.push("c.updated_at <= ?");
+      params.push(`${updatedTo}T23:59:59.999Z`);
+    }
+    if (areaMin && Number.isFinite(Number(areaMin))) {
+      conditions.push("c.desired_area >= ?");
+      params.push(Number(areaMin));
+    }
+    if (areaMax && Number.isFinite(Number(areaMax))) {
+      conditions.push("c.desired_area <= ?");
+      params.push(Number(areaMax));
+    }
     if (search) {
       conditions.push("(c.title LIKE ? OR co.name LIKE ?)");
       params.push(`%${search}%`, `%${search}%`);
@@ -91,13 +150,43 @@ export function registerClueRoutes(app: Hono): void {
 
     const rows = await queryAll<Record<string, unknown>>(
       db,
-      `SELECT c.*, co.name as company_name, co.industry_code
+      `SELECT c.*, co.name as company_name, co.industry_code, u.display_name as owner_name,
+        (
+          SELECT GROUP_CONCAT(t.name, '、')
+          FROM clue_tags ct
+          JOIN tags t ON t.id = ct.tag_id
+          WHERE ct.clue_id = c.id AND t.deleted_at IS NULL AND t.status = 'active'
+        ) AS tag_names
        FROM clues c
        LEFT JOIN companies co ON c.company_id = co.id
+       LEFT JOIN users u ON c.owner_id = u.id
        ${where}
        ORDER BY c.${sortCol} ${sortOrder}
        LIMIT ? OFFSET ?`,
       ...params, pageSize, offset,
+    );
+
+    const tagCounts = await queryAll<{ name: string; total: number }>(
+      db,
+      `SELECT t.name, COUNT(DISTINCT c.id) AS total
+       FROM clues c
+       LEFT JOIN companies co ON c.company_id = co.id
+       LEFT JOIN users u ON c.owner_id = u.id
+       JOIN clue_tags ct ON ct.clue_id = c.id
+       JOIN tags t ON t.id = ct.tag_id
+       ${where}
+       AND t.deleted_at IS NULL AND t.status = 'active'
+       GROUP BY t.name
+       ORDER BY total DESC, t.name ASC
+       LIMIT 30`,
+      ...params,
+    );
+
+    const reserveStatusTags = Object.fromEntries(
+      ["近两周新增", "重点在签约", "无跟进价值", "已签约"].map((name) => [
+        name,
+        tagCounts.find((item) => item.name === name)?.total || 0,
+      ]),
     );
 
     return c.json({
@@ -108,6 +197,11 @@ export function registerClueRoutes(app: Hono): void {
         page,
         pageSize,
         totalPages: Math.ceil(total / pageSize),
+        summary: {
+          total,
+          reserveStatusTags,
+          tagCounts,
+        },
       },
     });
   });

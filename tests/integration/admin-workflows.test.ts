@@ -457,6 +457,63 @@ describe("operational workflows", () => {
     expect(imports.body.data).toHaveProperty("items");
   });
 
+  it("filters clues by imported fields and returns board summary", async () => {
+    const now = "2026-06-22T00:00:00.000Z";
+    await env.DB.prepare(
+      `INSERT INTO companies
+        (id, name, normalized_name, main_business, industry_code, status, created_at, created_by, updated_at, updated_by)
+       VALUES
+        ('board-company-1', '看板芯片公司', '看板芯片公司', '芯片加工', 'integrated_circuit', 'active', ?, 'seed', ?, 'seed'),
+        ('board-company-2', '看板医疗公司', '看板医疗公司', '医疗器械', 'medical_devices', 'active', ?, 'seed', ?, 'seed')`,
+    ).bind(now, now, now, now).run();
+    await env.DB.prepare(
+      `INSERT INTO tags
+        (id, name, normalized_name, color, description, status, created_at, created_by, updated_at, updated_by)
+       VALUES
+        ('board-tag-signing', '重点在签约', '重点在签约', NULL, NULL, 'active', ?, 'seed', ?, 'seed'),
+        ('board-tag-new', '近两周新增', '近两周新增', NULL, NULL, 'active', ?, 'seed', ?, 'seed')`,
+    ).bind(now, now, now, now).run();
+    await env.DB.prepare(
+      `INSERT INTO clues
+        (id, company_id, title, desired_area, acquired_at, expected_landing_at, stage_code, bottleneck, source_code, financing_flag, prior_location, owner_id, version, created_at, created_by, updated_at, updated_by)
+       VALUES
+        ('board-clue-1', 'board-company-1', '看板签约线索', 1200, '2026-06-15', '2026-09-01', 'site_visit', '商务条件', 'visit', 1, '昌平', 'admin-workflows', 1, ?, 'seed', ?, 'seed'),
+        ('board-clue-2', 'board-company-2', '看板新增线索', 300, '2026-06-20', '2026-08-01', 'new', '', 'activity', 0, '海淀', NULL, 1, ?, 'seed', ?, 'seed')`,
+    ).bind(now, now, now, now).run();
+    await env.DB.prepare(
+      `INSERT INTO clue_tags
+        (id, clue_id, tag_id, created_at, created_by, updated_at, updated_by)
+       VALUES
+        ('board-clue-tag-1', 'board-clue-1', 'board-tag-signing', ?, 'seed', ?, 'seed'),
+        ('board-clue-tag-2', 'board-clue-2', 'board-tag-new', ?, 'seed', ?, 'seed')`,
+    ).bind(now, now, now, now).run();
+
+    const filtered = await request(
+      "GET",
+      "/api/clues?tag=重点在签约&industry=integrated_circuit&owner=admin-workflows&acquiredFrom=2026-06-01&acquiredTo=2026-06-30&expectedFrom=2026-09-01&expectedTo=2026-09-30&areaMin=1000&areaMax=1300",
+    );
+
+    expect(filtered.status).toBe(200);
+    expect(filtered.body.data.items).toHaveLength(1);
+    expect(filtered.body.data.items[0]).toMatchObject({
+      title: "看板签约线索",
+      company_name: "看板芯片公司",
+      industry_code: "integrated_circuit",
+      owner_name: "Admin Workflows",
+      tag_names: "重点在签约",
+      financing_flag: 1,
+      prior_location: "昌平",
+      bottleneck: "商务条件",
+    });
+    expect(filtered.body.data.summary).toMatchObject({
+      total: 1,
+      reserveStatusTags: {
+        "重点在签约": 1,
+      },
+    });
+    expect(filtered.body.data.summary.tagCounts).toContainEqual({ name: "重点在签约", total: 1 });
+  });
+
   it("imports valid clue rows and records failed rows", async () => {
     const response = await request("POST", "/api/imports", {
       jobType: "clues",

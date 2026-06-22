@@ -125,6 +125,18 @@ test.describe("authenticated application", () => {
     await expect(page.getByRole("heading", { name: "招商看板" })).toBeVisible();
   });
 
+  test("shows the clue board and advanced filters on the clue list", async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto("/clues");
+    await expect(page.getByText("线索看板")).toBeVisible();
+    await expect(page.getByLabel("行业")).toBeVisible();
+    await expect(page.getByLabel("标签")).toBeVisible();
+    await expect(page.getByLabel("负责人")).toBeVisible();
+    await expect(page.getByLabel("获取意向起")).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "标签" })).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "核心卡点" })).toBeVisible();
+  });
+
   test("publishes a managed label change to the clue list and form", async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto("/admin/copy");
