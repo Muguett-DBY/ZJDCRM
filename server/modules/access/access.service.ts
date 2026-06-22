@@ -123,7 +123,7 @@ export async function assertClueAccess(
   }
 
   // Check data scope
-  const filter = buildClueScopeFilter(access);
+  const filter = buildClueScopeFilter(access, "owner_id", "department_id");
   if (filter.sql) {
     const checkSql = `SELECT id FROM clues WHERE id = ? AND ${filter.sql}`;
     const result = await db.prepare(checkSql).bind(clueId, ...filter.params).first<{ id: string }>();

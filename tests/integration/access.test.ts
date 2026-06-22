@@ -170,6 +170,25 @@ describe("data scope API integration", () => {
     expect(session.body.data?.user.id).toBe("sales-1");
   });
 
+  it("sales user can read a clue they just created", async () => {
+    const { cookie, csrfToken } = await loginAs("sales1");
+    const created = await apiResponse("POST", "/api/clues", {
+      cookie,
+      csrfToken,
+      body: {
+        title: "sales-owned-clue",
+        companyName: "sales-owned-company",
+        sourceCode: "self_developed",
+      },
+    });
+    expect(created.status).toBe(201);
+
+    const detail = await apiResponse("GET", `/api/clues/${(created.body as any).data.id}`, { cookie });
+
+    expect(detail.status).toBe(200);
+    expect((detail.body as any).data.title).toBe("sales-owned-clue");
+  });
+
   it("disabled user cannot log in", async () => {
     const { status } = await apiResponse("POST", "/api/auth/login", {
       body: { account: "disabled1", password: "test123" },
