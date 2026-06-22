@@ -8,6 +8,8 @@ import { execute, queryAll, queryOne } from "../../shared/db";
 import { createId } from "../../shared/ids";
 import { normalizeCompanyName } from "../../shared/normalize-company";
 import { nowIsoUtc } from "../../shared/time";
+import { buildWorkbookImportPreview } from "../../../shared/xlsx-import-preview";
+import { normalizeImportKey } from "../../../shared/import-normalization";
 import {
   buildAccessContext,
   buildClueScopeFilter,
@@ -29,6 +31,148 @@ function csvCell(value: unknown): string {
 async function sha256Hex(value: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function normalizeTagName(name: string): string {
+  return name.trim().toLowerCase();
+}
+
+async function ensureTag(db: D1Database, name: string, userId: string, now: string): Promise<string> {
+  const normalized = normalizeTagName(name);
+  const existing = await queryOne<{ id: string }>(db, "SELECT id FROM tags WHERE normalized_name = ? AND deleted_at IS NULL", normalized);
+  if (existing) return existing.id;
+  const id = createId();
+  await execute(
+    db,
+    `INSERT INTO tags (id, name, normalized_name, color, status, created_at, created_by, updated_at, updated_by)
+     VALUES (?, ?, ?, ?, 'active', ?, ?, ?, ?)`,
+    id, name, normalized, "#2563eb", now, userId, now, userId,
+  );
+  return id;
+}
+
+async function findUserIdByDisplayName(db: D1Database, displayName: string | undefined): Promise<string | null> {
+  if (!displayName) return null;
+  const user = await queryOne<{ id: string }>(
+    db,
+    "SELECT id FROM users WHERE (display_name = ? OR account = ?) AND status = 'active' AND deleted_at IS NULL",
+    displayName,
+    displayName,
+  );
+  return user?.id || null;
+}
+
+async function ensureSpaceHierarchy(db: D1Database, projectName: string, userId: string, now: string): Promise<{ parkId: string; buildingId: string; floorId: string }> {
+  const safeProject = projectName || "未命名园区";
+  const parkCode = `import-${normalizeImportKey(safeProject) || "park"}`;
+  let park = await queryOne<{ id: string }>(db, "SELECT id FROM parks WHERE code = ? AND deleted_at IS NULL", parkCode);
+  if (!park) {
+    park = { id: createId() };
+    await execute(
+      db,
+      `INSERT INTO parks (id, code, normalized_name, name, status_code, notes, created_at, created_by, updated_at, updated_by)
+       VALUES (?, ?, ?, ?, 'active', 'AI/XLSX导入自动创建', ?, ?, ?, ?)`,
+      park.id, parkCode, normalizeCompanyName(safeProject), safeProject, now, userId, now, userId,
+    );
+  }
+
+  let building = await queryOne<{ id: string }>(db, "SELECT id FROM buildings WHERE park_id = ? AND name = ? AND deleted_at IS NULL", park.id, safeProject);
+  if (!building) {
+    building = { id: createId() };
+    await execute(
+      db,
+      `INSERT INTO buildings (id, park_id, code, name, total_floors, status_code, notes, created_at, created_by, updated_at, updated_by)
+       VALUES (?, ?, ?, ?, 1, 'active', 'AI/XLSX导入自动创建', ?, ?, ?, ?)`,
+      building.id, park.id, `${parkCode}-building`, safeProject, now, userId, now, userId,
+    );
+  }
+
+  let floor = await queryOne<{ id: string }>(db, "SELECT id FROM floors WHERE building_id = ? AND floor_no = '默认' AND deleted_at IS NULL", building.id);
+  if (!floor) {
+    floor = { id: createId() };
+    await execute(
+      db,
+      `INSERT INTO floors (id, building_id, floor_no, name, area, status_code, notes, created_at, created_by, updated_at, updated_by)
+       VALUES (?, ?, '默认', '默认楼层', 0, 'active', 'AI/XLSX导入自动创建', ?, ?, ?, ?)`,
+      floor.id, building.id, now, userId, now, userId,
+    );
+  }
+
+  return { parkId: park.id, buildingId: building.id, floorId: floor.id };
+}
+
+async function ensureImportedSpace(db: D1Database, row: Record<string, any>, userId: string, now: string): Promise<string> {
+  const projectName = String(row.projectName || "导入空间").trim();
+  const roomName = String(row.roomName || "").trim();
+  if (!roomName) throw new Error("空间房间号为必填项");
+  const existing = await queryOne<{ id: string }>(db, "SELECT id FROM spaces WHERE name = ? AND deleted_at IS NULL", roomName);
+  if (existing) return existing.id;
+
+  const hierarchy = await ensureSpaceHierarchy(db, projectName, userId, now);
+  const area = Number(row.area || 0);
+  const notes = [
+    row.height ? `层高：${row.height}` : "",
+    row.loadBearing ? `承重：${row.loadBearing}` : "",
+    row.deliveryStatus ? `交付状态：${row.deliveryStatus}` : "",
+    row.propertyFee ? `物业费：${row.propertyFee}` : "",
+    row.negotiatingCustomer ? `在谈客户：${row.negotiatingCustomer}` : "",
+  ].filter(Boolean).join("\n");
+  const id = createId();
+  await execute(
+    db,
+    `INSERT INTO spaces
+      (id, floor_id, code, name, area, available_area, status_code, notes, created_at, created_by, updated_at, updated_by)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    id,
+    hierarchy.floorId,
+    `import-${normalizeImportKey(projectName)}-${normalizeImportKey(roomName) || id}`,
+    roomName,
+    Number.isFinite(area) ? area : 0,
+    Number.isFinite(area) ? area : 0,
+    row.negotiatingCustomer ? "negotiating" : "available",
+    notes || null,
+    now,
+    userId,
+    now,
+    userId,
+  );
+  return id;
+}
+
+async function requestAiImportReview(env: any, preview: any): Promise<any | null> {
+  const apiKey = String(env.OPENCODE_GO_API_KEY || "").trim();
+  if (!apiKey) return null;
+  const response = await fetch("https://opencode.ai/zen/go/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${apiKey}`,
+      "content-type": "application/json; charset=utf-8",
+    },
+    body: JSON.stringify({
+      model: "mimo-v2.5",
+      reasoning_effort: "high",
+      temperature: 0,
+      max_tokens: 9000,
+      messages: [
+        {
+          role: "user",
+          content: [
+            "你是 CFZZS 招商台账导入校验器。只返回 JSON。",
+            "检查以下已由规则解析的 preview，修正明显的行业、渠道、阶段错误。",
+            "不要新增不存在的客户。title 必须优先使用公司名，不要使用长备注。",
+            "返回格式：{\"leadRows\": [...], \"warnings\": [...] }。",
+            JSON.stringify({ leadRows: preview.leadRows.slice(0, 200), warnings: preview.warnings }),
+          ].join("\n"),
+        },
+      ],
+    }),
+  });
+  if (!response.ok) throw new Error(`OpenCode Go 调用失败：${response.status}`);
+  const body = await response.json() as any;
+  const content = body?.choices?.[0]?.message?.content;
+  if (!content) return null;
+  const parsed = JSON.parse(String(content).replace(/^```json|```$/g, "").trim());
+  return parsed && typeof parsed === "object" ? parsed : null;
 }
 
 export function registerWorkflowRoutes(app: Hono): void {
@@ -75,6 +219,36 @@ export function registerWorkflowRoutes(app: Hono): void {
     return c.json({ ok: true, data: { items } });
   });
 
+  app.post("/api/imports/ai-preview", requireAuth, requireCsrf, async (c) => {
+    const user = c.get("user");
+    const access = await buildAccessContext(c.env.DB, user.id);
+    if (!user.isSuperAdmin && !hasPermission(access, "data:import")) {
+      return error(c, 403, "FORBIDDEN", "没有导入权限");
+    }
+    const body = await c.req.json();
+    const workbook = body.workbook;
+    if (!workbook || !Array.isArray(workbook.sheets)) {
+      return error(c, 400, "VALIDATION_ERROR", "请上传可识别的 XLSX 工作簿");
+    }
+    const preview = buildWorkbookImportPreview(workbook);
+    try {
+      const ai = await requestAiImportReview(c.env, preview);
+      if (ai?.leadRows && Array.isArray(ai.leadRows)) {
+        preview.leadRows = ai.leadRows.map((row: any, index: number) => ({
+          ...preview.leadRows[index],
+          ...row,
+          title: String(row.title || preview.leadRows[index]?.title || row.companyName || "").slice(0, 120),
+          tags: Array.isArray(row.tags) ? row.tags : preview.leadRows[index]?.tags || [],
+        })).filter((row: any) => row.companyName);
+      }
+      if (Array.isArray(ai?.warnings)) preview.warnings.push(...ai.warnings.map(String));
+    } catch (cause) {
+      preview.warnings.push(cause instanceof Error ? cause.message : "AI 预览失败，已使用规则解析结果");
+    }
+    preview.stats = { leads: preview.leadRows.length, spaces: preview.spaceRows.length, warnings: preview.warnings.length };
+    return c.json({ ok: true, data: preview });
+  });
+
   app.post("/api/imports", requireAuth, requireCsrf, async (c) => {
     const user = c.get("user");
     const access = await buildAccessContext(c.env.DB, user.id);
@@ -84,7 +258,8 @@ export function registerWorkflowRoutes(app: Hono): void {
 
     const body = await c.req.json();
     const rows = Array.isArray(body.rows) ? body.rows.slice(0, 1000) : [];
-    if (body.jobType !== "clues" || rows.length === 0) {
+    const spaces = Array.isArray(body.spaces) ? body.spaces.slice(0, 1000) : [];
+    if (!["clues", "ai-xlsx"].includes(body.jobType) || (rows.length === 0 && spaces.length === 0)) {
       return error(c, 400, "VALIDATION_ERROR", "请选择招商线索模板并提供数据");
     }
 
@@ -96,12 +271,39 @@ export function registerWorkflowRoutes(app: Hono): void {
         (id, requested_by, job_type, source_file_name, template_version, status,
          total_rows, success_rows, failed_rows, started_at, created_at, created_by, updated_at, updated_by)
        VALUES (?, ?, 'clues', ?, '1.0', 'running', ?, 0, 0, ?, ?, ?, ?, ?)`,
-      jobId, user.id, body.sourceFileName || "import.csv", rows.length,
+      jobId, user.id, body.sourceFileName || "import.csv", rows.length + spaces.length,
       now, now, user.id, now, user.id,
     );
 
     let successRows = 0;
     let failedRows = 0;
+    const spaceByCustomerKey = new Map<string, string>();
+
+    for (let index = 0; index < spaces.length; index++) {
+      const row = spaces[index] || {};
+      let rowStatus = "success";
+      let rowError: string | null = null;
+      try {
+        const spaceId = await ensureImportedSpace(c.env.DB, row, user.id, now);
+        const negotiatingCustomer = String(row.negotiatingCustomer || "").trim();
+        if (negotiatingCustomer) spaceByCustomerKey.set(normalizeImportKey(negotiatingCustomer), spaceId);
+        successRows++;
+      } catch (cause) {
+        rowStatus = "failed";
+        rowError = cause instanceof Error ? cause.message : "空间导入失败";
+        failedRows++;
+      }
+      await execute(
+        c.env.DB,
+        `INSERT INTO import_job_rows
+          (id, import_job_id, row_number, status, error_message, source_payload_json,
+           created_at, created_by, updated_at, updated_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        createId(), jobId, index + 1, rowStatus, rowError, JSON.stringify({ type: "space", ...row }),
+        now, user.id, now, user.id,
+      );
+    }
+
     for (let index = 0; index < rows.length; index++) {
       const row = rows[index] || {};
       const title = String(row.title || "").trim();
@@ -112,6 +314,8 @@ export function registerWorkflowRoutes(app: Hono): void {
       try {
         if (!title || !companyName) throw new Error("线索名称和企业名称为必填项");
         const normalizedName = normalizeCompanyName(companyName);
+        const clueId = createId();
+        const ownerId = row.ownerId || await findUserIdByDisplayName(c.env.DB, row.ownerName) || null;
         let company = await queryOne<{ id: string }>(
           c.env.DB,
           "SELECT id FROM companies WHERE normalized_name = ? AND deleted_at IS NULL",
@@ -134,14 +338,51 @@ export function registerWorkflowRoutes(app: Hono): void {
           c.env.DB,
           `INSERT INTO clues
             (id, company_id, title, desired_area, acquired_at, expected_landing_at,
-             stage_code, source_code, owner_id, department_id,
+             stage_code, bottleneck, source_code, internal_referral_flag, financing_flag,
+             prior_location, owner_id, department_id,
              created_at, created_by, updated_at, updated_by)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          createId(), company.id, title, row.desiredArea || null,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          clueId, company.id, title, row.desiredArea || null,
           row.acquiredAt || now, row.expectedLandingAt || null,
-          row.stageCode || "new", row.sourceCode || null, row.ownerId || null,
-          row.departmentId || user.departmentId || null, now, user.id, now, user.id,
+          row.stageCode || "new", row.bottleneck || null, row.sourceCode || null,
+          row.internalReferralFlag ? 1 : 0, row.financingFlag ? 1 : 0,
+          row.priorLocation || null, ownerId, row.departmentId || user.departmentId || null,
+          now, user.id, now, user.id,
         );
+        const tagNames = Array.isArray(row.tags) ? row.tags.map(String).filter(Boolean) : [];
+        for (const tagName of tagNames) {
+          const tagId = await ensureTag(c.env.DB, tagName, user.id, now);
+          await execute(
+            c.env.DB,
+            `INSERT OR IGNORE INTO clue_tags (id, clue_id, tag_id, created_at, created_by, updated_at, updated_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            createId(), clueId, tagId, now, user.id, now, user.id,
+          );
+        }
+        const followupContent = String(row.followupContent || "").trim();
+        if (followupContent) {
+          await execute(
+            c.env.DB,
+            `INSERT INTO followups
+              (id, clue_id, owner_id, method_code, followup_at, content, bottleneck, new_stage_code,
+               created_at, created_by, updated_at, updated_by)
+             VALUES (?, ?, ?, 'visit', ?, ?, ?, ?, ?, ?, ?, ?)`,
+            createId(), clueId, ownerId || user.id, now, followupContent, row.bottleneck || null,
+            row.stageCode || "new", now, user.id, now, user.id,
+          );
+        }
+        const matchKey = normalizeImportKey(row.matchedSpaceText || row.companyName);
+        const matchedSpaceId = spaceByCustomerKey.get(matchKey);
+        if (matchedSpaceId) {
+          await execute(
+            c.env.DB,
+            `INSERT OR IGNORE INTO clue_space_matches
+              (id, clue_id, space_id, match_rank, match_reason, matched_area, score,
+               created_at, created_by, updated_at, updated_by)
+             VALUES (?, ?, ?, 1, 'AI/XLSX导入：在谈客户匹配', ?, 90, ?, ?, ?, ?)`,
+            createId(), clueId, matchedSpaceId, row.desiredArea || null, now, user.id, now, user.id,
+          );
+        }
         successRows++;
       } catch (cause) {
         rowStatus = "failed";
@@ -155,7 +396,7 @@ export function registerWorkflowRoutes(app: Hono): void {
           (id, import_job_id, row_number, status, error_message, source_payload_json,
            created_at, created_by, updated_at, updated_by)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        createId(), jobId, index + 1, rowStatus, rowError, JSON.stringify(row),
+        createId(), jobId, spaces.length + index + 1, rowStatus, rowError, JSON.stringify(row),
         now, user.id, now, user.id,
       );
     }
@@ -176,12 +417,12 @@ export function registerWorkflowRoutes(app: Hono): void {
       ipAddress: c.req.header("cf-connecting-ip") || null,
       userAgent: c.req.header("user-agent") || null,
       requestId: c.get("requestId"),
-      summary: { totalRows: rows.length, successRows, failedRows },
+      summary: { totalRows: rows.length + spaces.length, successRows, failedRows },
     });
 
     return c.json({
       ok: true,
-      data: { id: jobId, totalRows: rows.length, successRows, failedRows },
+      data: { id: jobId, totalRows: rows.length + spaces.length, successRows, failedRows },
     }, 201);
   });
 

@@ -475,6 +475,83 @@ describe("operational workflows", () => {
     expect(imported?.title).toBe("Imported clue");
   });
 
+  it("imports AI-normalized workbook leads with tags, followups, spaces, and matches", async () => {
+    const response = await request("POST", "/api/imports", {
+      jobType: "ai-xlsx",
+      sourceFileName: "招商共享信息.xlsx",
+      rows: [
+        {
+          title: "铜芯科技",
+          companyName: "铜芯科技",
+          mainBusiness: "芯片加工",
+          industryCode: "integrated_circuit",
+          sourceCode: "visit",
+          desiredArea: 14500,
+          stageCode: "site_visit",
+          bottleneck: "用电",
+          financingFlag: false,
+          priorLocation: "昌平",
+          tags: ["客户储备", "重点客户", "短期督办"],
+          followupContent: "落实签约商务条件，环评能评用电设备等合规性，尽快推进签约。",
+          matchedSpaceText: "铜芯科技",
+        },
+      ],
+      spaces: [
+        {
+          projectName: "器械城一期",
+          roomName: "5号楼A座-整栋",
+          area: 3161.75,
+          height: "首层4.5 标准层3.7",
+          loadBearing: "首层400标准层200",
+          deliveryStatus: "毛坯",
+          propertyFee: "0.17元/平/天",
+          negotiatingCustomer: "铜芯科技",
+        },
+      ],
+    });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data).toMatchObject({
+      totalRows: 2,
+      successRows: 2,
+      failedRows: 0,
+    });
+
+    const clue = await env.DB.prepare(
+      `SELECT c.id, c.title, c.stage_code, c.bottleneck, co.name AS company_name, co.industry_code
+       FROM clues c JOIN companies co ON co.id = c.company_id
+       WHERE co.name = '铜芯科技'`,
+    ).first<any>();
+    expect(clue).toMatchObject({
+      title: "铜芯科技",
+      stage_code: "site_visit",
+      bottleneck: "用电",
+      company_name: "铜芯科技",
+      industry_code: "integrated_circuit",
+    });
+
+    const tags = await env.DB.prepare(
+      `SELECT t.name FROM tags t JOIN clue_tags ct ON ct.tag_id = t.id WHERE ct.clue_id = ? ORDER BY t.name`,
+    ).bind(clue?.id).all<{ name: string }>();
+    expect(tags.results.map((tag) => tag.name)).toEqual(["客户储备", "短期督办", "重点客户"]);
+
+    const followup = await env.DB.prepare(
+      "SELECT content, bottleneck FROM followups WHERE clue_id = ? ORDER BY created_at DESC LIMIT 1",
+    ).bind(clue?.id).first<{ content: string; bottleneck: string }>();
+    expect(followup?.content).toContain("落实签约商务条件");
+    expect(followup?.bottleneck).toBe("用电");
+
+    const match = await env.DB.prepare(
+      `SELECT s.name AS space_name, csm.match_reason
+       FROM clue_space_matches csm JOIN spaces s ON s.id = csm.space_id
+       WHERE csm.clue_id = ?`,
+    ).bind(clue?.id).first<{ space_name: string; match_reason: string }>();
+    expect(match).toMatchObject({
+      space_name: "5号楼A座-整栋",
+      match_reason: "AI/XLSX导入：在谈客户匹配",
+    });
+  });
+
   it("updates camelCase clue fields and requires a stage-change reason", async () => {
     const clue = await env.DB.prepare(
       "SELECT id, version FROM clues WHERE title = 'Imported clue'",
