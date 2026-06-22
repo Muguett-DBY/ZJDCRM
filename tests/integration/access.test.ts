@@ -16,6 +16,7 @@ async function ensureSeeded() {
     { name: "0002_business.sql", queries: splitSql((await import("../../migrations/0002_business.sql?raw")).default) },
     { name: "0003_workflows.sql", queries: splitSql((await import("../../migrations/0003_workflows.sql?raw")).default) },
     { name: "0004_indexes.sql", queries: splitSql((await import("../../migrations/0004_indexes.sql?raw")).default) },
+    { name: "0007_park_leasing_workflow.sql", queries: splitSql((await import("../../migrations/0007_park_leasing_workflow.sql?raw")).default) },
   ]);
 
   // Seed departments

@@ -92,7 +92,9 @@ export default function ClueDetailPage() {
   const [contactForm, setContactForm] = useState({ name: "", mobile: "", title: "", isPrimaryDecisionMaker: false });
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
   const [contactEditForm, setContactEditForm] = useState({ name: "", mobile: "", title: "", isPrimaryDecisionMaker: false });
-  const [followupForm, setFollowupForm] = useState({ methodCode: "phone", content: "", customerFeedback: "", nextAction: "", nextFollowupAt: "" });
+  const [followupForm, setFollowupForm] = useState({ methodCode: "phone", content: "", customerFeedback: "", customerNeed: "", customerPain: "", nextAction: "", nextFollowupAt: "", countsAsVisit: false, countsAsTour: false });
+  const [attachments, setAttachments] = useState<any[]>([]);
+  const [followupAttachmentIds, setFollowupAttachmentIds] = useState<string[]>([]);
   const [spaceId, setSpaceId] = useState("");
   const [availableSpaces, setAvailableSpaces] = useState<any[]>([]);
   const [editingProject, setEditingProject] = useState(false);
@@ -166,8 +168,9 @@ export default function ClueDetailPage() {
 
   const addFollowup = async (event: React.FormEvent) => {
     event.preventDefault();
-    await api.post(`/clues/${id}/followups`, followupForm, csrfToken);
-    setFollowupForm({ methodCode: "phone", content: "", customerFeedback: "", nextAction: "", nextFollowupAt: "" });
+    await api.post(`/clues/${id}/followups`, { ...followupForm, attachmentIds: followupAttachmentIds }, csrfToken);
+    setFollowupForm({ methodCode: "phone", content: "", customerFeedback: "", customerNeed: "", customerPain: "", nextAction: "", nextFollowupAt: "", countsAsVisit: false, countsAsTour: false });
+    setFollowupAttachmentIds([]);
     await fetchClue();
   };
 
@@ -205,7 +208,7 @@ export default function ClueDetailPage() {
             <div className="form-field"><label htmlFor="edit-company-name">企业名称</label><input id="edit-company-name" aria-label="编辑企业名称" required value={projectForm.companyName} onChange={(event) => setProjectForm({ ...projectForm, companyName: event.target.value })} /></div>
             <div className="form-field"><label>主营业务</label><input value={projectForm.mainBusiness} onChange={(event) => setProjectForm({ ...projectForm, mainBusiness: event.target.value })} /></div>
             <div className="form-field"><label>行业</label><select value={projectForm.industryCode} onChange={(event) => setProjectForm({ ...projectForm, industryCode: event.target.value })}><option value="medical_devices">医疗器械</option><option value="pharma">医药健康</option><option value="ai">AI/人工智能</option><option value="integrated_circuit">集成电路</option><option value="smart_manufacturing">智能制造</option><option value="other">其他</option></select></div>
-            <div className="form-field"><label>渠道</label><select value={projectForm.sourceCode} onChange={(event) => setProjectForm({ ...projectForm, sourceCode: event.target.value })}><option value="">请选择</option><option value="activity">活动</option><option value="referral">渠道推荐</option><option value="gov">政府推荐</option><option value="visit">拜访</option><option value="internal">内部转介</option></select></div>
+            <div className="form-field"><label>渠道 *</label><select required value={projectForm.sourceCode} onChange={(event) => setProjectForm({ ...projectForm, sourceCode: event.target.value })}><option value="">请选择</option><option value="crm_stock">CRM存量</option><option value="company_new_entity">公司自有资源（新主体）</option><option value="government_task">政府领导任务</option><option value="kejinf_referral">科金转介</option><option value="other_referral">其他转介</option><option value="self_developed">自拓</option></select></div>
             <div className="form-field"><label>阶段</label><select value={projectForm.stageCode} onChange={(event) => setProjectForm({ ...projectForm, stageCode: event.target.value })}>{Object.entries(stageLabels).map(([code, name]) => <option key={code} value={code}>{name}</option>)}</select></div>
             <div className="form-field"><label>需求面积（㎡）</label><input type="number" value={projectForm.desiredArea} onChange={(event) => setProjectForm({ ...projectForm, desiredArea: event.target.value })} /></div>
             <div className="form-field"><label>获取意向时间</label><input type="date" value={projectForm.acquiredAt} onChange={(event) => setProjectForm({ ...projectForm, acquiredAt: event.target.value })} /></div>
@@ -232,6 +235,8 @@ export default function ClueDetailPage() {
           <div style={{ fontSize: 13 }}><strong>需求面积：</strong>{clue.desired_area ? `${clue.desired_area}㎡` : "-"}</div>
           <div style={{ fontSize: 13 }}><strong>预计落位：</strong>{clue.expected_landing_at ? new Date(clue.expected_landing_at).toLocaleDateString("zh-CN") : "-"}</div>
           <div style={{ fontSize: 13 }}><strong>卡点：</strong>{clue.bottleneck || "-"}</div>
+          <div style={{ fontSize: 13 }}><strong>最新需求：</strong>{(clue as any).current_customer_need || "-"}</div>
+          <div style={{ fontSize: 13 }}><strong>最新痛点：</strong>{(clue as any).current_customer_pain || "-"}</div>
         </div>
         <div className="card">
           <div className="card-header">需求与效益</div>
@@ -295,7 +300,7 @@ export default function ClueDetailPage() {
         )}
       </div>
 
-      <AttachmentPanel clueId={clue.id} csrfToken={csrfToken} />
+      <AttachmentPanel clueId={clue.id} csrfToken={csrfToken} onItemsChange={setAttachments} />
 
       {/* Matched Spaces */}
       <div className="card" style={{ marginBottom: 16 }}>
@@ -332,8 +337,13 @@ export default function ClueDetailPage() {
           </select>
           <textarea aria-label="跟进内容" placeholder="跟进内容" required value={followupForm.content} onChange={(event) => setFollowupForm({ ...followupForm, content: event.target.value })} />
           <input aria-label="客户反馈" placeholder="客户反馈" value={followupForm.customerFeedback} onChange={(event) => setFollowupForm({ ...followupForm, customerFeedback: event.target.value })} />
+          <input aria-label="客户需求" placeholder="客户需求（更新摘要）" value={followupForm.customerNeed} onChange={(event) => setFollowupForm({ ...followupForm, customerNeed: event.target.value })} />
+          <input aria-label="客户痛点" placeholder="客户痛点（更新摘要）" value={followupForm.customerPain} onChange={(event) => setFollowupForm({ ...followupForm, customerPain: event.target.value })} />
           <input aria-label="下一步动作" placeholder="下一步动作" value={followupForm.nextAction} onChange={(event) => setFollowupForm({ ...followupForm, nextAction: event.target.value })} />
           <input aria-label="下次跟进时间" type="datetime-local" value={followupForm.nextFollowupAt} onChange={(event) => setFollowupForm({ ...followupForm, nextFollowupAt: event.target.value })} />
+          <label><input type="checkbox" checked={followupForm.countsAsVisit} onChange={(event) => setFollowupForm({ ...followupForm, countsAsVisit: event.target.checked })} /> 计入客户拜访</label>
+          <label><input type="checkbox" checked={followupForm.countsAsTour} onChange={(event) => setFollowupForm({ ...followupForm, countsAsTour: event.target.checked })} /> 计入园区带看</label>
+          {(followupForm.countsAsVisit || followupForm.countsAsTour) && <div style={{ gridColumn: "1 / -1" }}><small>计入拜访/带看必须勾选至少一个已上传附件：</small>{attachments.map((attachment) => <label key={attachment.id} style={{ marginLeft: 12 }}><input type="checkbox" checked={followupAttachmentIds.includes(attachment.id)} onChange={(event) => setFollowupAttachmentIds((ids) => event.target.checked ? [...ids, attachment.id] : ids.filter((item) => item !== attachment.id))} /> {attachment.original_file_name}</label>)}</div>}
           <button className="btn btn-sm" type="submit">添加跟进</button>
         </form>
         {clue.followups?.length > 0 ? (
@@ -345,6 +355,9 @@ export default function ClueDetailPage() {
                 </div>
                 <div>{f.content}</div>
                 {f.customer_feedback && <div style={{ fontSize: 13, marginTop: 4, color: "var(--color-text-secondary)" }}>客户反馈：{f.customer_feedback}</div>}
+                {f.customer_need && <div style={{ fontSize: 13, marginTop: 4 }}>客户需求：{f.customer_need}</div>}
+                {f.customer_pain && <div style={{ fontSize: 13, marginTop: 4 }}>客户痛点：{f.customer_pain}</div>}
+                {(f.counts_as_visit || f.counts_as_tour) && <div style={{ fontSize: 13, marginTop: 4 }}>计入：{[f.counts_as_visit && "客户拜访", f.counts_as_tour && "园区带看"].filter(Boolean).join("、")}</div>}
                 {f.next_action && <div style={{ fontSize: 13, marginTop: 4 }}>下一步：{f.next_action}</div>}
               </div>
             ))}

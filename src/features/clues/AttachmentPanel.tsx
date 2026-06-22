@@ -3,19 +3,19 @@ import { api } from "../../lib/api";
 
 type Attachment = { id: string; original_file_name: string; content_type: string; file_size: number; uploaded_at: string };
 
-export default function AttachmentPanel({ clueId, csrfToken }: { clueId: string; csrfToken: string }) {
+export default function AttachmentPanel({ clueId, csrfToken, onItemsChange }: { clueId: string; csrfToken: string; onItemsChange?: (items: Attachment[]) => void }) {
   const [items, setItems] = useState<Attachment[]>([]);
   const [message, setMessage] = useState("");
   const load = async () => {
-    try { setItems(await api.get<Attachment[]>(`/clues/${clueId}/attachments`)); } catch (err: any) { setMessage(err.message); }
+    try { const nextItems = await api.get<Attachment[]>(`/clues/${clueId}/attachments`); setItems(nextItems); onItemsChange?.(nextItems); } catch (err: any) { setMessage(err.message); }
   };
   useEffect(() => {
     let cancelled = false;
     void api.get<Attachment[]>(`/clues/${clueId}/attachments`)
-      .then((nextItems) => { if (!cancelled) setItems(nextItems); })
+      .then((nextItems) => { if (!cancelled) { setItems(nextItems); onItemsChange?.(nextItems); } })
       .catch((err: any) => { if (!cancelled) setMessage(err.message); });
     return () => { cancelled = true; };
-  }, [clueId]);
+  }, [clueId, onItemsChange]);
   const upload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;

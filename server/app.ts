@@ -15,6 +15,7 @@ import { registerAdminRoutes } from "./modules/admin/admin.routes";
 import { registerWorkflowRoutes } from "./modules/workflows/workflows.routes";
 import { registerAttachmentRoutes } from "./modules/attachments/attachments.routes";
 import { registerContentRoutes } from "./modules/content/content.routes";
+import { registerLeasingRoutes } from "./modules/leasing/leasing.routes";
 
 export function createApi() {
   const app: any = new Hono();
@@ -30,6 +31,7 @@ export function createApi() {
   registerContactRoutes(app);
   registerClueRoutes(app);
   registerSpaceRoutes(app);
+  registerLeasingRoutes(app);
   registerFollowupRoutes(app);
   registerNotificationRoutes(app);
   registerDashboardRoutes(app);

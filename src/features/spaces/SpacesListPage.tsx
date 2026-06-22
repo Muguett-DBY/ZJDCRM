@@ -6,7 +6,7 @@ import { useCopy } from "../../lib/copy-provider";
 
 interface SpaceItem {
   id: string; name: string; code: string; area: number; available_area: number;
-  status_code: string; park_name: string; building_name: string; floor_no: string;
+  status_code: string; derived_status_code?: string; locked_area?: number; candidate_count?: number; park_name: string; building_name: string; floor_no: string;
 }
 
 export default function SpacesListPage() {
@@ -48,13 +48,13 @@ export default function SpacesListPage() {
       ) : data && data.items.length > 0 ? (
         <div className="table-wrapper">
           <table>
-            <thead><tr><th>园区</th><th>楼宇</th><th>楼层</th><th>空间</th><th>面积</th><th>状态</th><th>操作</th></tr></thead>
+            <thead><tr><th>园区</th><th>楼宇</th><th>楼层</th><th>空间</th><th>总/可用面积</th><th>备选线索</th><th>状态</th><th>操作</th></tr></thead>
             <tbody>
               {data.items.map((s) => (
                 <tr key={s.id}>
                   <td>{s.park_name}</td><td>{s.building_name}</td><td>{s.floor_no}层</td>
-                  <td>{s.name}</td><td>{s.area}㎡</td>
-                  <td><span className="badge badge-primary">{s.status_code}</span></td>
+                  <td>{s.name}</td><td>{s.area}㎡ / {s.available_area}㎡</td><td>{s.candidate_count || 0}</td>
+                  <td><span className="badge badge-primary">{s.derived_status_code || s.status_code}</span>{Number(s.locked_area || 0) > 0 && <small> 锁定 {s.locked_area}㎡</small>}</td>
                   <td><Link to={`/spaces/${s.id}`} className="btn btn-ghost btn-sm">详情</Link></td>
                 </tr>
               ))}

@@ -33,7 +33,15 @@ export function registerSpaceRoutes(app: Hono): void {
 
     const items = await queryAll(
       db,
-      `SELECT s.*, f.floor_no, f.name as floor_name, b.name as building_name, b.id as building_id, p.name as park_name, p.id as park_id
+      `SELECT s.*, f.floor_no, f.name as floor_name, b.name as building_name, b.id as building_id, p.name as park_name, p.id as park_id,
+        (SELECT COUNT(*) FROM clue_space_matches csm WHERE csm.space_id = s.id AND csm.status_code = 'candidate') AS candidate_count,
+        CASE
+          WHEN s.physical_status_code != 'active' THEN s.physical_status_code
+          WHEN EXISTS (SELECT 1 FROM contract_request_allocations cra JOIN contract_requests cr ON cr.id = cra.contract_request_id WHERE cra.space_id = s.id AND cr.status_code = 'pending' AND cr.deleted_at IS NULL) THEN 'pending_soft_lock'
+          WHEN s.available_area <= 0 THEN 'fully_signed'
+          WHEN s.available_area < s.area THEN 'partially_signed'
+          ELSE 'available'
+        END AS derived_status_code
        FROM spaces s
        JOIN floors f ON s.floor_id = f.id
        JOIN buildings b ON f.building_id = b.id
@@ -53,7 +61,15 @@ export function registerSpaceRoutes(app: Hono): void {
     const spaceId = c.req.param("id");
     const space = await queryOne(
       db,
-      `SELECT s.*, f.floor_no, f.name as floor_name, b.name as building_name, p.name as park_name
+      `SELECT s.*, f.floor_no, f.name as floor_name, b.name as building_name, p.name as park_name,
+        (SELECT COUNT(*) FROM clue_space_matches csm WHERE csm.space_id = s.id AND csm.status_code = 'candidate') AS candidate_count,
+        CASE
+          WHEN s.physical_status_code != 'active' THEN s.physical_status_code
+          WHEN EXISTS (SELECT 1 FROM contract_request_allocations cra JOIN contract_requests cr ON cr.id = cra.contract_request_id WHERE cra.space_id = s.id AND cr.status_code = 'pending' AND cr.deleted_at IS NULL) THEN 'pending_soft_lock'
+          WHEN s.available_area <= 0 THEN 'fully_signed'
+          WHEN s.available_area < s.area THEN 'partially_signed'
+          ELSE 'available'
+        END AS derived_status_code
        FROM spaces s
        JOIN floors f ON s.floor_id = f.id
        JOIN buildings b ON f.building_id = b.id
@@ -131,17 +147,25 @@ export function registerSpaceRoutes(app: Hono): void {
     const user = c.get("user");
     const db = c.env.DB;
     const clueId = c.req.param("clueId");
-    const body = await c.req.json() as { spaceId: string; matchRank?: number; matchReason?: string };
+    const body = await c.req.json() as { spaceId: string; matchRank?: number; matchReason?: string; matchedArea?: number };
     const now = nowIsoUtc();
     const access = await buildAccessContext(db, user.id);
     try { await assertClueAccess(db, access, clueId, "write"); }
     catch { return c.json({ ok: false, error: { code: "NOT_FOUND", message: "线索不存在或无权编辑", requestId: c.get("requestId") } }, 404); }
 
+    const space = await queryOne<any>(db, "SELECT available_area, locked_area, physical_status_code FROM spaces WHERE id = ? AND deleted_at IS NULL", body.spaceId);
+    if (!space) return c.json({ ok: false, error: { code: "INVALID_SPACE", message: "空间不存在", requestId: c.get("requestId") } }, 400);
+    if (space.physical_status_code !== "active") return c.json({ ok: false, error: { code: "SPACE_OFF_MARKET", message: "空间当前不可招商", requestId: c.get("requestId") } }, 409);
+    if (Number(space.locked_area) > 0) return c.json({ ok: false, error: { code: "SPACE_SOFT_LOCKED", message: "空间存在待审批或锁定余量，暂不能新增备选", requestId: c.get("requestId") } }, 409);
+    const clue = await queryOne<any>(db, "SELECT desired_area FROM clues WHERE id = ?", clueId);
+    const matchedArea = Number(body.matchedArea || clue?.desired_area || 0);
+    if (matchedArea > Number(space.available_area)) return c.json({ ok: false, error: { code: "INSUFFICIENT_SPACE_AREA", message: "空间可用面积不足，可在组合方案中保留不足面积空间", requestId: c.get("requestId") } }, 400);
+
     await execute(
       db,
-      `INSERT INTO clue_space_matches (id, clue_id, space_id, match_rank, match_reason, created_at, created_by, updated_at, updated_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      createId(), clueId, body.spaceId, body.matchRank || 1, body.matchReason || null, now, user.id, now, user.id,
+      `INSERT INTO clue_space_matches (id, clue_id, space_id, match_rank, match_reason, matched_area, status_code, created_at, created_by, updated_at, updated_by)
+       VALUES (?, ?, ?, ?, ?, ?, 'candidate', ?, ?, ?, ?)`,
+      createId(), clueId, body.spaceId, body.matchRank || 1, body.matchReason || null, matchedArea || null, now, user.id, now, user.id,
     );
 
     return c.json({ ok: true, data: null }, 201);

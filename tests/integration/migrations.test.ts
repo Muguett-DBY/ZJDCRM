@@ -4,6 +4,7 @@ import coreMigration from "../../migrations/0001_core.sql?raw";
 import businessMigration from "../../migrations/0002_business.sql?raw";
 import workflowMigration from "../../migrations/0003_workflows.sql?raw";
 import indexMigration from "../../migrations/0004_indexes.sql?raw";
+import leasingMigration from "../../migrations/0007_park_leasing_workflow.sql?raw";
 
 type MigrationFile = {
   name: string;
@@ -19,6 +20,7 @@ const migrations: MigrationFile[] = [
   { name: "0002_business.sql", sql: businessMigration },
   { name: "0003_workflows.sql", sql: workflowMigration },
   { name: "0004_indexes.sql", sql: indexMigration },
+  { name: "0007_park_leasing_workflow.sql", sql: leasingMigration },
 ];
 
 function splitSqlStatements(sql: string) {
@@ -140,6 +142,13 @@ const requiredTables = [
   "export_files",
   "audit_logs",
   "backup_records",
+  "space_target_histories",
+  "park_operator_assignments",
+  "contract_requests",
+  "contract_request_allocations",
+  "space_allocations",
+  "team_kpi_targets",
+  "followup_attachment_links",
 ] as const;
 
 const requiredIndexes = [

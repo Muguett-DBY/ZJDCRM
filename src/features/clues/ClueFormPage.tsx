@@ -142,11 +142,11 @@ export default function ClueFormPage() {
                 {industries.map((item) => <option key={item.id} value={item.value || item.code}>{item.name}</option>)}
               </select>
             </div>
-            <div className="form-field"><label>渠道来源</label>
-              <select value={form.sourceCode} onChange={(e) => set("sourceCode", e.target.value)}>
-                <option value="">请选择</option><option value="activity">活动</option>
-                <option value="referral">渠道推荐</option><option value="gov">政府推荐</option>
-                <option value="visit">拜访</option><option value="internal">内部转介</option>
+            <div className="form-field"><label>渠道来源 *</label>
+              <select required value={form.sourceCode} onChange={(e) => set("sourceCode", e.target.value)}>
+                <option value="">请选择</option><option value="crm_stock">CRM存量</option>
+                <option value="company_new_entity">公司自有资源（新主体）</option><option value="government_task">政府领导任务</option>
+                <option value="kejinf_referral">科金转介</option><option value="other_referral">其他转介</option><option value="self_developed">自拓</option>
               </select>
             </div>
             <div className="form-field"><label>{t("clue.field.stage")}</label>

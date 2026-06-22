@@ -247,7 +247,7 @@ export function registerClueRoutes(app: Hono): void {
     // Get matched spaces
     const spaces = await queryAll<Record<string, unknown>>(
       db,
-      `SELECT s.*, csm.match_rank, csm.match_reason
+      `SELECT s.*, csm.match_rank, csm.match_reason, csm.matched_area, csm.status_code
        FROM clue_space_matches csm
        JOIN spaces s ON csm.space_id = s.id
        WHERE csm.clue_id = ? AND s.deleted_at IS NULL
@@ -261,10 +261,13 @@ export function registerClueRoutes(app: Hono): void {
       `SELECT * FROM stage_histories WHERE clue_id = ? ORDER BY changed_at DESC`,
       clueId,
     );
+    const contractRequests = await queryAll<Record<string, unknown>>(
+      db, "SELECT id, status_code, submitted_at, decided_at, decision_reason FROM contract_requests WHERE clue_id = ? AND deleted_at IS NULL ORDER BY submitted_at DESC", clueId,
+    );
 
     return c.json({
       ok: true,
-      data: { ...clue, contacts, followups, spaces, stageHistory },
+      data: { ...clue, contacts, followups, spaces, stageHistory, contractRequests },
     });
   });
 

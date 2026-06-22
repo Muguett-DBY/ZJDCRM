@@ -24,7 +24,9 @@ export default function SpaceDetailPage() {
             <dt>楼层</dt><dd>{space.floor_name || space.floor_no}</dd>
             <dt>总面积</dt><dd>{space.area}㎡</dd>
             <dt>可用面积</dt><dd>{space.available_area}㎡</dd>
-            <dt>状态</dt><dd>{space.status_code}</dd>
+            <dt>锁定面积</dt><dd>{space.locked_area || 0}㎡</dd>
+            <dt>备选线索</dt><dd>{space.candidate_count || 0} 个</dd>
+            <dt>状态</dt><dd>{space.derived_status_code || space.status_code}</dd>
             <dt>预计释放</dt><dd>{space.expected_release_at || "-"}</dd>
             <dt>备注</dt><dd>{space.notes || "-"}</dd>
           </dl>

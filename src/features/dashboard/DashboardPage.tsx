@@ -9,6 +9,9 @@ interface DashboardData {
   stageDistribution: { stage_code: string; total: number }[];
   sourceDistribution: { source_code: string; total: number }[];
   signedCount: number;
+  visitCount: number;
+  tourCount: number;
+  signedArea: number;
   landedCount: number;
   expectedArea: number;
   expectedOutput: number;
@@ -63,11 +66,15 @@ export default function DashboardPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
             <div className="stat-card"><div className="stat-value">{data?.newClues || 0}</div><div className="stat-label">新增线索</div></div>
             <div className="stat-card"><div className="stat-value">{data?.signedCount || 0}</div><div className="stat-label">已签约</div></div>
+            <div className="stat-card"><div className="stat-value">{data?.visitCount || 0}</div><div className="stat-label">客户拜访（按线索去重）</div></div>
+            <div className="stat-card"><div className="stat-value">{data?.tourCount || 0}</div><div className="stat-label">园区带看（按线索去重）</div></div>
+            <div className="stat-card"><div className="stat-value">{data?.signedArea ? `${data.signedArea}㎡` : "-"}</div><div className="stat-label">确认签约去化</div></div>
             <div className="stat-card"><div className="stat-value">{data?.landedCount || 0}</div><div className="stat-label">已落地</div></div>
             <div className="stat-card"><div className="stat-value">{data?.expectedArea ? `${data.expectedArea}㎡` : "-"}</div><div className="stat-label">预计面积</div></div>
             <div className="stat-card"><div className="stat-value">{data?.expectedOutput ?? "-"}</div><div className="stat-label">预计产值</div></div>
             <div className="stat-card"><div className="stat-value">{data?.expectedTax ?? "-"}</div><div className="stat-label">预计税收</div></div>
           </div>
+          <p className="text-muted" style={{ fontSize: 12, marginTop: -12, marginBottom: 16 }}>时间筛选只影响事件数量；跨园区预选汇总会按园区重复计入，不作去重。</p>
 
           {/* Stage Distribution Table */}
           <div className="card" style={{ marginBottom: 16 }}>
