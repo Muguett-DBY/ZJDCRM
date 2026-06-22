@@ -187,6 +187,7 @@ describe("data scope API integration", () => {
 
     expect(detail.status).toBe(200);
     expect((detail.body as any).data.title).toBe("sales-owned-clue");
+    expect((detail.body as any).data.department_id).toBe("dept-1");
   });
 
   it("disabled user cannot log in", async () => {

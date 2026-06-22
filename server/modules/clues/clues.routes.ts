@@ -310,7 +310,7 @@ export function registerClueRoutes(app: Hono): void {
     }
 
     const ownerId = (body.ownerId as string) || user.id;
-    const departmentId = body.departmentId as string || null;
+    const departmentId = body.departmentId as string || user.departmentId || null;
     const stageCode = (body.stageCode as string) || "new";
 
     if (!validateStage(stageCode)) {
