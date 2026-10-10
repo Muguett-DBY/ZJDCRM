@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="280" viewBox="0 0 1080 280" role="img" aria-labelledby="title desc">
+<title id="title">CFZZS / ZJDCRM</title><desc id="desc">A workspace for industrial-park leasing records.</desc>
+<defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#101522"/><stop offset="1" stop-color="#202139"/></linearGradient><radialGradient id="glow"><stop stop-color="#9dc7ff" stop-opacity=".16"/><stop offset="1" stop-color="#9dc7ff" stop-opacity="0"/></radialGradient></defs>
+<rect width="1080" height="280" rx="20" fill="url(#bg)"/>
+<circle cx="910" cy="124" r="210" fill="url(#glow)"/>
+<path d="M743 30v220" stroke="#ffffff" opacity=".1"/>
+<path d="M40 246h660" stroke="#ffffff" opacity=".12"/>
+<rect x="42" y="43" width="4" height="14" rx="2" fill="#9dc7ff"/>
+<text x="57" y="55" font-family="Consolas,monospace" font-size="12" letter-spacing="2" fill="#9dc7ff">LEADS / SPACES / FOLLOW-UPS</text>
+<text x="40" y="117" font-family="Segoe UI,Arial,sans-serif" font-weight="700" font-size="44" fill="#f5f3fb">CFZZS / ZJDCRM</text>
+<text x="42" y="156" font-family="Segoe UI,Arial,sans-serif" font-size="18" fill="#c5c9db">A workspace for industrial-park leasing records.</text>
+<text x="42" y="214" font-family="Consolas,monospace" font-size="12" letter-spacing="1" fill="#a5e0da">BY CUSTARD</text>
+<g stroke="#9dc7ff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="810" y="62" width="83" height="63" rx="10"/><rect x="910" y="62" width="83" height="63" rx="10"/><rect x="810" y="142" width="83" height="63" rx="10"/><rect x="910" y="142" width="83" height="63" rx="10"/><path d="M827 83h32M827 97h47M927 164h32M927 178h47"/></g>
+</svg>

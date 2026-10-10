@@ -1,10 +1,19 @@
-# CFZZS · ZJDCRM
+<!-- Project artwork created for this repository. -->
+<p align="center">
+  <img src="./docs/assets/readme-banner.svg" width="100%" alt="CFZZS / ZJDCRM — A workspace for industrial-park leasing records." />
+</p>
+
+<h1 align="center">CFZZS / ZJDCRM</h1>
+
+<p align="center">
+  <img src="./docs/assets/readme-badges.svg" alt="Account required · React · TypeScript · Hono · Cloudflare D1 / R2" />
+</p>
 
 **A CRM for tracking industrial-park leasing leads, companies, contacts, and available spaces.**
 
-[Hosted app](https://cfzzs.custard.top) · [Product and architecture](docs/superpowers/specs/2026-06-21-zjdcrm-design.md)
+<p align="center"><a href="#what-it-covers">What it covers</a> &nbsp; · &nbsp; <a href="#run-locally">Run locally</a> &nbsp; · &nbsp; <a href="#checks">Checks</a></p>
 
-`React` · `TypeScript` · `Hono` · `Cloudflare D1 / R2`
+[Hosted app](https://cfzzs.custard.top) · [Product and architecture](docs/superpowers/specs/2026-06-21-zjdcrm-design.md)
 
 ## What it covers
 
