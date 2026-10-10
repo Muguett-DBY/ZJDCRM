@@ -14,3 +14,25 @@ test-results/
 *.local
 .reasonix/
 _worker.bundle
+
+# Local state and private artifacts
+/.agent/
+/.open-next/
+/.wrangler/
+/.venv/
+/node_modules/
+/.playwright-cli/
+/playwright-report/
+/test-results/
+/output/
+__pycache__/
+*.pyc
+*.tsbuildinfo
+.dev.vars.*
+!.dev.vars.example
+*.pem
+*.key
+*.p12
+gitleaks-report.json
+secret-scan.json
+!scripts/check_repository_hygiene.py
