@@ -1,32 +1,23 @@
-# CFZZS — 产业园区招商线索管理系统
+# CFZZS · ZJDCRM
 
-在线地址：**[https://cfzzs.custard.top](https://cfzzs.custard.top)**
+**A CRM for tracking industrial-park leasing leads, companies, contacts, and available spaces.**
 
-| 模块 | 状态 |
-|------|------|
-| 登录 / 认证（PBKDF2 + Session + CSRF） | ✅ 线上可用 |
-| RBAC 数据权限（5 角色 + 数据范围） | ✅ 服务端完成 |
-| 招商线索 CRUD + 阶段流转 + 乐观锁 | ✅ 服务端完成 |
-| 联系人 + 企业查重 | ✅ 服务端完成 |
-| 跟进记录 + 时间线 | ✅ 服务端完成 |
-| 空间资源（园区/楼宇/楼层/空间） | ✅ 服务端完成 |
-| 首页仪表盘（ECharts 看板） | ✅ 前端完成 |
-| 数据导入导出 | ✅ CSV 导入 + 审批导出 |
-| 管理后台 API | ✅ 服务端完成 |
-| 种子数据（admin / 角色/权限/字典） | ✅ 已部署 |
-| CI / CD | ✅ GitHub Actions + Cloudflare Pages |
-| E2E 测试 | ✅ 登录、业务路由、后台路由、用户创建、导入 |
+[Hosted app](https://cfzzs.custard.top) · [Product and architecture](docs/superpowers/specs/2026-06-21-zjdcrm-design.md)
 
-## 技术栈
+`React` · `TypeScript` · `Hono` · `Cloudflare D1 / R2`
 
-- **前端：** React 19、TypeScript、Vite、React Router、TanStack Query、ECharts
-- **API：** Hono、Cloudflare Pages Functions
-- **数据库：** Cloudflare D1（SQLite）
-- **文件：** Cloudflare R2（私有附件、导出文件）
-- **测试：** Vitest（含 workerd）、Playwright
-- **部署：** GitHub → Cloudflare Pages（自动）
+## What it covers
 
-## 本地开发
+- Leads, stage changes, follow-ups, and company contacts.
+- Park, building, floor, and space records.
+- Dashboards, imports, and controlled exports.
+- User roles and access scopes.
+
+The interface is primarily Chinese. The hosted app requires an account; there are no public demo credentials in this repository.
+
+## Run locally
+
+Install Node.js and npm compatible with the locked dependencies. Configure local secrets in `.dev.vars` and review the bindings in `wrangler.jsonc`.
 
 ```bash
 npm ci
@@ -36,9 +27,9 @@ npm run build
 npm run pages:dev
 ```
 
-访问 `http://localhost:8788`。
+Open `http://localhost:8788`. Use your deployment's configured administrator credentials.
 
-## 验证
+## Checks
 
 ```bash
 npm run typecheck
@@ -47,15 +38,4 @@ npm run test:run
 npm run build
 ```
 
-## 管理员登录
-
-| 项目 | 内容 |
-|------|------|
-| 地址 | https://cfzzs.custard.top |
-| 账号 | `admin` |
-| 密码 | 使用部署时配置的管理员密码；请勿写入 Git 或公开文档 |
-
-## 设计文档
-
-- [产品与架构规格](docs/superpowers/specs/2026-06-21-zjdcrm-design.md)
-- [完整实施计划](docs/superpowers/plans/2026-06-21-zjdcrm-implementation.md)
+The [implementation notes](docs/superpowers/plans/2026-06-21-zjdcrm-implementation.md) cover the database and business workflows. Licensed under [MIT](LICENSE).
