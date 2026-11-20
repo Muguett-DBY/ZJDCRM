@@ -13,7 +13,7 @@
 
 <p align="center"><a href="#what-it-covers">What it covers</a> &nbsp; · &nbsp; <a href="#run-locally">Run locally</a> &nbsp; · &nbsp; <a href="#checks">Checks</a></p>
 
-[Hosted app](https://cfzzs.custard.top) · [Product and architecture](docs/superpowers/specs/2026-06-21-zjdcrm-design.md)
+[Product and architecture](docs/superpowers/specs/2026-06-21-zjdcrm-design.md)
 
 ## What it covers
 
@@ -22,7 +22,7 @@
 - Dashboards, imports, and controlled exports.
 - User roles and access scopes.
 
-The interface is primarily Chinese. The hosted app requires an account; there are no public demo credentials in this repository.
+The interface is primarily Chinese. There are no public demo credentials in this repository.
 
 ## Run locally
 
